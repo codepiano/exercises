@@ -364,4 +364,57 @@
 (newline)
 (newline)
 
+; 2.25
+(display '--------2.25)
+(newline)
+
+(define writeln (lambda x (for-each display x) (newline)))
+
+(define entering
+    (lambda (test input cond-clause-number)
+        (begin
+            (if test (writeln "Entering cond-clause-" cond-clause-number " with ls = " input))
+            test)))
+
+(define leaving
+    (lambda (result cond-clause-number)
+        (begin
+            (writeln "Leaving cond-clause-" cond-clause-number " with result = " result)
+            result)))
+
+(define swapper-trace
+    (lambda (x y ls)
+        (cond ((entering (null? ls) ls 1) (leaving '() 1))
+              ((entering (equal? (car ls) x) ls 2) (leaving (cons y (swapper-trace x y (cdr ls))) 2))
+              ((entering (equal? (car ls) y) ls 3) (leaving (cons x (swapper-trace x y (cdr ls))) 2))
+              ((entering 'else ls 4) (leaving (cons (car ls) (swapper-trace x y (cdr ls))) 4)))))
+
+(display (swapper-trace 'b 'd '(a b c b d)))
+(newline)
+(newline)
+
+; 2.27
+(display '--------2.27)
+(newline)
+
+(define tracing
+    (lambda (message result)
+        (begin
+            (writeln message result)
+            result)))
+
+(define test-tracing
+    (lambda (test message input)
+        (begin
+            (if test (tracing message input))
+            test)))
+
+(define remove-lst-trace
+    (lambda (item ls)
+        (cond ((test-tracing (null? ls) "Entering cond-clause-1 with ls = " ls) (tracing "Leaving cond-clause-1 with result = " '()))
+              ((test-tracing (equal? (car ls) item) "Entering cond-clause-2 with ls = " ls) (tracing "Leaving cond-clause-2 with result =" (cdr ls)))
+              ((test-tracing 'else "Entering cond-clause-3 with ls = " ls) (tracing "Leaving cond-clause-3 with result = " (cons (car ls) (remove-lst-trace item (cdr ls))))))))
+
+(display (remove-lst-trace 'c '(a b c d)))
+(newline)
 (exit)
