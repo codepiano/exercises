@@ -124,4 +124,155 @@
 (display (sum-all '()))
 (newline)
 (newline)
+
+; 4.8
+(display '--------4.8)
+(newline)
+
+(define (count-parens-all ls)
+      (cond ((null? ls) 2)
+            ((null? (car ls)) (+ 2 (count-parens-all (cdr ls))))
+            ((pair? (car ls)) (+ (count-parens-all (car ls)) (count-parens-all (cdr ls))))
+            (else (count-parens-all (cdr ls)))))
+
+(display (count-parens-all '()))
+(newline)
+(display (count-parens-all '((a b) c)))
+(newline)
+(display (count-parens-all '(((a () b) c) () ((d) e))))
+(newline)
+(newline)
+
+; 4.9
+(display '--------4.9)
+(newline)
+
+(define (count-background-all item ls)
+      (cond ((null? ls) 0)
+            ((pair? (car ls)) (+ (count-background-all item (car ls)) (count-background-all item (cdr ls))))
+            ((equal? item (car ls)) (count-background-all item (cdr ls)))
+            (else (+ 1 (count-background-all item (cdr ls))))))
+
+(display (count-background-all 'a '((a) b (c a) d)))
+(newline)
+(display (count-background-all 'a ' ( ( ( (b (((a)) c)))))))
+(newline)
+(display (count-background-all 'b '()))
+(newline)
+(newline)
+
+; 4.10
+(display '--------4.10)
+(newline)
+
+(define (leftmost ls)
+      (cond ((null? ls) '())
+            ((pair? (car ls)) (leftmost (car ls)))
+            (else (car ls))))
+
+(display (leftmost '((a b) (c (d e)))))
+(newline)
+(display (leftmost '((((c ((e f) g) h))))))
+(newline)
+(display (leftmost '(() a)))
+(newline)
+(newline)
+
+; 4.11
+(display '--------4.11)
+(newline)
+
+(define (rightmost ls)
+      (cond ((null? ls) '())
+            ((null? (cdr ls)) (if (pair? (car ls))
+                                 (rightmost (car ls))
+                                 (car ls)))
+            (else (rightmost (cdr ls)))))
+
+(display (rightmost '((a b) (d (c d (f (g h) i) m n) u) v)))
+(newline)
+(display (rightmost '((((((b (c)))))))))
+(newline)
+(display (rightmost '(a ())) )
+(newline)
+(newline)
+
+; 4.14
+(display '--------4.14)
+(newline)
+
+(define (harmonic-sum-it n result)
+      (if (= n 0) 
+          result
+          (harmonic-sum-it (- n 1) (+ result (/ 1 n)))))
+
+(display (harmonic-sum-it 10 0))
+(newline)
+(display (harmonic-sum-it 100 0))
+(newline)
+(newline)
+
+; 4.17
+(display '--------4.17)
+(newline)
+
+(define (calls-fib n)
+      (cond ((= n 0) 1)
+            ((= n 1) 1)
+            (else (add1 (+ (calls-fib (- n 1)) (calls-fib (- n 2)))))))
+
+(display (calls-fib 10))
+(newline)
+(display (calls-fib 30))
+(newline)
+(newline)
+
+(define (adds-fib n)
+      (cond ((= n 0) 0)
+            ((= n 1) 0)
+            (else (add1 (+ (adds-fib (- n 1)) (adds-fib (- n 2)))))))
+
+(display (adds-fib 10))
+(newline)
+(display (adds-fib 30))
+(newline)
+(newline)
+
+; 4.18
+(display '--------4.18)
+(newline)
+
+(define (length-it ls n)
+      (cond ((null? ls) n)
+            (else (length-it (cdr ls) (+ n 1)))))
+
+(display (length-it '(1 2 3 4 5) 0))
+(newline)
+(display (length-it '() 0))
+(newline)
+(display (length-it '(1) 0))
+(newline)
+
+; 4.19
+(display '--------4.19)
+(newline)
+
+(define (mk-asc-list-of-ints n ls)
+      (if (= n 0)
+          ls
+          (mk-asc-list-of-ints (- n 1) (cons n ls))))
+
+(display (mk-asc-list-of-ints 10 '()))
+(newline)
+(newline)
+
+(define (mk-desc-list-of-ints n ls)
+      (if (= n 0)
+          ls
+          (mk-desc-list-of-ints (- n 1) (append ls (cons n '())))))
+
+(display (mk-desc-list-of-ints 10 '()))
+(newline)
+(newline)
+
 (exit)
