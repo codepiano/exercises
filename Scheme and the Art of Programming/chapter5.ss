@@ -1,3 +1,9 @@
+(define (sub1 n)
+    (- n 1))
+
+(define (add1 n)
+    (+ n 1))
+
 ; 5.6
 (display '--------5.6)
 (newline)

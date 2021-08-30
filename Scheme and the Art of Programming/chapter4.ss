@@ -1,3 +1,11 @@
+(define (sub1 n)
+    (- n 1))
+
+(define (add1 n)
+    (+ n 1))
+
+(define (atom? x) (not (pair? x)))
+
 ; 4.1
 (display '--------4.1)
 (newline)

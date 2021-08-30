@@ -1,3 +1,9 @@
+(define (sub1 n)
+    (- n 1))
+
+(define (add1 n)
+    (+ n 1))
+
 (display '--------6.1)
 (newline)
 
@@ -51,5 +57,148 @@
 (newline)
 (display (palindrome? "haskell"))
 (newline)
+
+(display '--------6.10)
+(newline)
+
+; copy from book
+(define legal?
+    (lambda (try legal-pl)
+        (letrec ((good?
+                    (lambda (new-pl up down)
+                        (cond
+                            ((null? new-pl) #t)
+                            (else (let ((next-pos (car new-pl)))
+                                (and
+                                    (not (= next-pos try))
+                                    (not (= next-pos up))
+                                    (not (= next-pos down))
+                                    (good? (cdr new-pl)
+                                           (add1 up)
+                                           (sub1 down)))))))))
+                (good? legal-pl (add1 try) (sub1 try)))))
+
+; copy from book and modify a little
+(define (queen n)
+    (letrec ((forward
+                (lambda (try legal-pl)
+                    (cond
+                        ((zero? try) (backtrack legal-pl))
+                        ((legal? try legal-pl)
+                            (build-solution n (cons try legal-pl)))
+                        (else (forward (sub1 try) legal-pl)))))
+            (backtrack
+                (lambda (legal-pl)
+                (cond
+                    ((null? legal-pl) '())
+                    (else (forward (sub1 (car legal-pl)) (cdr legal-pl))))))
+            (build-solution
+                (lambda (n legal-pl)
+                    (cond
+                        ((= n (length legal-pl)) legal-pl)
+                        (else (forward n legal-pl))))))
+        (build-solution n '())))
+
+
+(display (queen 3))
+(newline)
+(display (queen 4))
+(newline)
+(display (queen 5))
+(newline)
+(display (queen 6))
+(newline)
+(newline)
+
+(display '--------6.11)
+(newline)
+
+(define (sequence-legal? n legal-pl)
+    (letrec ((takeFrom (lambda (a b ll)
+                        (take (drop ll a) b)))
+             (good? (lambda (size l)
+                (letrec ((len (length l)))
+                        (if (> (* 2 size) len)
+                            #t
+                            (let ((alist (takeFrom (- len (* 2 size)) size l))
+                                  (blist (takeFrom (- len size) size l)))
+                                (if (equal? alist blist)
+                                    #f
+                                    (good? (add1 size) l))))))))
+        (good? 1 (append legal-pl (list n)))))
+
+(display (sequence-legal? 1 (list 1 2 3)))
+(newline)
+(display (sequence-legal? 3 (list 1 2 3)))
+(newline)
+(display (sequence-legal? 2 (list 1 2 1)))
+(newline)
+(display (sequence-legal? 2 (list 2)))
+(newline)
+
+; same as queen, but use different legal? function
+(define (goodSequence n)
+    (letrec ((forward
+                (lambda (try legal-pl)
+                    (cond
+                        ((zero? try) (backtrack legal-pl))
+                        ((sequence-legal? try legal-pl)
+                            (build-solution n (append legal-pl (list try))))
+                        (else (forward (sub1 try) legal-pl)))))
+            (backtrack
+                (lambda (legal-pl)
+                (cond
+                    ((null? legal-pl) '())
+                    (else (forward (sub1 (car legal-pl)) (cdr legal-pl))))))
+            (build-solution
+                (lambda (n legal-pl)
+                    (cond
+                        ((= n (length legal-pl)) legal-pl)
+                        (else (forward 3 legal-pl))))))
+        (build-solution n '())))
+
+(display (goodSequence 3))
+(newline)
+(display (goodSequence 5))
+(newline)
+(display (goodSequence 20))
+(newline)
+
+
+(define solution? (lambda (legal-pl)
+    (= (length legal-pl) 8)))
+
+(define fresh-try 8)
+
+
+(define searcher
+    (lambda (legal? solution? fresh-try)
+        (letrec
+            ((build-solution
+                (lambda (legal-pl)
+                    (cond
+                        ((solution? legal-pl) legal-pl)
+                        (else (forward fresh-try legal-pl)))))
+            (forward
+                (lambda (try legal-pl)
+                    (cond
+                        ((zero? try) (backtrack legal-pl))
+                        ((legal? try legal-pl)
+                            (build-solution (cons try legal-pl)))
+                        (else (forward (sub1 try) legal-pl)))))
+            (backtrack
+                (lambda (legal-pl)
+                (cond
+                    ((null? legal-pl) '())
+                    (else (forward (sub1 (car legal-pl)) (cdr legal-pl))))))
+            (build-all-solutions
+                (lambda ()
+                    (letrec
+                        ((loop (lambda (sol)
+                            (cond
+                                ((null? sol) '())
+                                (else (cons sol (loop (backtrack sol))))))))
+                        (loop (build-solution '()))))))
+            (build-all-solutions))))
 
 (exit)
