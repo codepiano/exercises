@@ -1,8 +1,6 @@
-## scheme version
+## scheme implementation
 
-chapter 1-5 [Chez Scheme](https://cisco.github.io/ChezScheme/)
-
-chapter 6- [MIT/GNU Scheme](https://www.gnu.org/software/mit-scheme/)
+[MIT/GNU Scheme](https://www.gnu.org/software/mit-scheme/)
 
 code runner config
 
