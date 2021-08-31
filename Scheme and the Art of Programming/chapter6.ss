@@ -114,18 +114,16 @@
 (newline)
 
 (define (sequence-legal? n legal-pl)
-    (letrec ((takeFrom (lambda (a b ll)
-                        (take (drop ll a) b)))
-             (good? (lambda (size l)
+    (letrec ((good? (lambda (size l)
                 (letrec ((len (length l)))
                         (if (> (* 2 size) len)
                             #t
-                            (let ((alist (takeFrom (- len (* 2 size)) size l))
-                                  (blist (takeFrom (- len size) size l)))
+                            (let ((alist (take l size))
+                                  (blist (take (drop l size) size)))
                                 (if (equal? alist blist)
                                     #f
                                     (good? (add1 size) l))))))))
-        (good? 1 (append legal-pl (list n)))))
+        (good? 1 (cons n legal-pl))))
 
 (display (sequence-legal? 1 (list 1 2 3)))
 (newline)
@@ -143,7 +141,7 @@
                     (cond
                         ((zero? try) (backtrack legal-pl))
                         ((sequence-legal? try legal-pl)
-                            (build-solution n (append legal-pl (list try))))
+                            (build-solution n (cons try legal-pl)))
                         (else (forward (sub1 try) legal-pl)))))
             (backtrack
                 (lambda (legal-pl)
