@@ -165,12 +165,16 @@
 (newline)
 
 
+(display '--------6.12)
+(newline)
+
 (define solution? (lambda (legal-pl)
     (= (length legal-pl) 8)))
 
 (define fresh-try 8)
 
 
+; five per line
 (define searcher
     (lambda (legal? solution? fresh-try)
         (letrec
@@ -188,17 +192,98 @@
                         (else (forward (sub1 try) legal-pl)))))
             (backtrack
                 (lambda (legal-pl)
-                (cond
-                    ((null? legal-pl) '())
-                    (else (forward (sub1 (car legal-pl)) (cdr legal-pl))))))
+                    (cond
+                        ((null? legal-pl) '())
+                        (else (forward (sub1 (car legal-pl)) (cdr legal-pl))))))
             (build-all-solutions
                 (lambda ()
                     (letrec
-                        ((loop (lambda (sol)
+                        ((loop (lambda (sol n)
+                            (if (= n 4)
+                                (newline)
+                                #f)
                             (cond
                                 ((null? sol) '())
-                                (else (cons sol (loop (backtrack sol))))))))
-                        (loop (build-solution '()))))))
+                                (else (begin 
+                                        (display sol)
+                                        (loop (backtrack sol) (modulo (add1 n) 5))))))))
+                        (loop (build-solution '()) 4)))))
             (build-all-solutions))))
+
+(searcher legal? (lambda (x) (= (length x) 7)) 7)
+
+(display '--------6.14)
+(newline)
+
+(define searcher-without-length
+    (lambda (legal? k fresh-try)
+        (letrec
+            ((build-solution
+                (lambda (legal-pl size)
+                    (cond
+                        ((= size k) legal-pl)
+                        (else (forward fresh-try legal-pl size)))))
+            (forward
+                (lambda (try legal-pl size)
+                    (cond
+                        ((zero? try) (backtrack legal-pl size))
+                        ((legal? try legal-pl)
+                            (build-solution (cons try legal-pl) (add1 size)))
+                        (else (forward (sub1 try) legal-pl size)))))
+            (backtrack
+                (lambda (legal-pl size)
+                    (cond
+                        ((null? legal-pl) '())
+                        (else (forward (sub1 (car legal-pl)) (cdr legal-pl) (sub1 size))))))
+            (build-all-solutions
+                (lambda ()
+                    (letrec
+                        ((loop (lambda (sol n)
+                            (if (= n 4)
+                                (newline)
+                                #f)
+                            (cond
+                                ((null? sol) '())
+                                (else (begin 
+                                        (display sol)
+                                        (loop (backtrack sol k) (modulo (add1 n) 5))))))))
+                        (loop (build-solution '() 0) 4)))))
+            (build-all-solutions))))
+
+(searcher-without-length legal? 7 7)
+
+(display '--------6.15)
+(newline)
+
+(define searcher-without-length-combined
+    (lambda (legal? k fresh-try)
+        (letrec
+            ((build-solution
+                (lambda (try legal-pl size)
+                    (cond
+                        ((zero? try) 
+                            (cond
+                                ((null? legal-pl) '())
+                                (else (build-solution (sub1 (car legal-pl)) (cdr legal-pl) (sub1 size)))))
+                        ((= size k) legal-pl)
+                        ((legal? try legal-pl)
+                            (build-solution fresh-try (cons try legal-pl) (add1 size)))
+                        (else (build-solution (sub1 try) legal-pl size)))))
+            (build-all-solutions
+                (lambda ()
+                    (letrec
+                        ((loop (lambda (sol n)
+                            (if (= n 4)
+                                (newline)
+                                #f)
+                            (cond
+                                ((null? sol) '())
+                                (else (begin 
+                                        (display sol)
+                                        (loop (build-solution 0 sol k) (modulo (add1 n) 5))))))))
+                        (loop (build-solution fresh-try '() 0) 4)))))
+            (build-all-solutions))))
+
+(searcher-without-length-combined legal? 7 7)
 
 (exit)
