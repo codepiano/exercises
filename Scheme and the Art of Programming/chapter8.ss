@@ -4,6 +4,8 @@
     (lambda (x)
         (f (g x)))))
 
+(define (add1 n)
+    (+ n 1))
 
 (display '--------8.1)
 (newline)
@@ -224,11 +226,19 @@
 (display '--------8.8)
 (newline)
 
-
 (define neither
     (lambda (pred)
         (lambda (arg1 arg2)
             (not (or (pred arg1) (pred arg2))))))
+
+(define superset
+    (lambda (s1)
+        (lambda (s2)
+            ((for-all (contains s1)) s2))))
+
+(define subset (lambda (s1)
+    (lambda (s2)
+        ((superset s2) s1))))
 
 (define set-equal
     (lambda (objl)
@@ -238,6 +248,7 @@
                 (and ((both set?) objl obj2)
                      ((subset objl) obj2)
                      ((subset obj2) objl))))))
+
 
 (define element (compose there-exists set-equal))
 
@@ -315,6 +326,123 @@
 (define union-flat (lambda args ((flat-set (lambda (x y) y) (lambda (x) (not x))) args)))
 
 (writeln (union-flat (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 2 1)))
+(newline)
+
+(display '--------8.9)
+(newline)
+
+(define set-builder
+    (lambda (pred base-set)
+        (letrec
+            ((helper
+                (lambda (s)
+                    (if (empty-set? s)
+                        base-set
+                        (let ((elem (pick s)))
+                            (if (pred elem)
+                                (adjoin elem (helper ((residue elem) s)))
+                                (helper ((residue elem) s))))))))
+            helper)))
+
+(define difference (lambda (s1 s2)
+    ((set-builder (compose not (contains s2)) the-empty-set) s1)))
+
+(define (symmetric-difference s1 s2)
+    (letrec ((i1 (difference s1 s2))
+            (i2 (difference s2 s1)))
+            (union i1 i2)))
+
+(writeln (symmetric-difference (make-set 1 2 3 4 5) (make-set 3 4 5 6 7)))
+(newline)
+
+(display '--------8.10)
+(newline)
+
+(define remove-equal
+    (lambda (item ls)
+        (cond
+            ((null? ls) '())
+            ((set-equal? (car ls) item) (remove-equal item (cdr ls)))
+            (else (cons (car ls) (remove-equal item (cdr ls)))))))
+            
+(define residue-equal
+    (lambda (elem)
+        (lambda (s)
+            (let ((ls (remove-equal elem (cdr s))))
+                (cond
+                    ((null? ls) the-empty-set)
+                    (else (cons set-tag ls)))))))
+
+(define set-equal?
+    (lambda (objl obj2)
+        ((set-equal objl) obj2)))
+
+(define adjoin-c
+    (lambda (elem)
+        (lambda (s)
+           (cons set-tag (cons elem (cdr s))))))
+
+(define set-map
+    (lambda (proc s)
+        (if (empty-set? s)
+            the-empty-set
+            (let ((elem (pick s)))
+                 (adjoin (proc elem)
+                    (set-map proc ((residue-equal elem) s)))))))
+
+(define union-c
+    (lambda args
+        (letrec ((helper (lambda (s1 s2)
+                            (if (empty-set? s1)
+                                s2
+                                (let ((elem (pick s1)))
+                                    (if (not ((contains s2) elem))
+                                        (adjoin elem (helper ((residue-equal elem) s1) s2))
+                                        (helper ((residue-equal elem) s1) s2))))))
+                 (foldLeft (lambda (args)
+                                (cond ((null? args) the-empty-set)
+                                       ((empty-set? (car args)) the-empty-set)
+                                       ((null? (cdr args)) (car args))
+                                       ((empty-set? (cadr args)) the-empty-set)
+                                       (else (letrec ((s1 (car args))
+                                                      (s2 (cadr args)))
+                                                     (foldLeft (cons (helper s1 s2) (cddr args)))))))))
+            (foldLeft args))))
+
+(define (power-set s)
+    (letrec ((generate (lambda (x y)
+                        (let ((n (set-map (adjoin-c x) y)))
+                            (union-c n y))))
+             (helper (lambda (l)
+                        (if (empty-set? l)
+                            (make-set the-empty-set)
+                            (let ((elem (pick l)))
+                                (generate elem (helper ((residue-equal elem) l))))))))
+        (helper s)))
+
+(writeln (power-set (make-set 'a 'b 'c)))
+(newline)
+
+(display '--------8.11)
+(newline)
+
+(define cardinal
+    (lambda (s)
+        (if (empty-set? s)
+        0
+        (let ((elem (pick s)))
+            (add1 (cardinal ((residue elem) s)))))))
+
+(define (select-by-cardinal n)
+    (lambda (s)
+        (if (empty-set? s)
+            the-empty-set
+            (let ((elem (pick s)))
+                (if (= n (cardinal elem))
+                    (adjoin elem ((select-by-cardinal n) ((residue-equal elem) s)))
+                    ((select-by-cardinal n) ((residue-equal elem) s)))))))
+
+(writeln ((select-by-cardinal 2) (make-set (make-set 'a) (make-set 'a 'b) (make-set 'a 'b 'c) (make-set 'b 'c) (make-set 'b))))
 (newline)
 
 (exit)
