@@ -221,4 +221,100 @@
 (writeln ((for-all-for-one odd?) '(2 4)))
 (newline)
 
+(display '--------8.8)
+(newline)
+
+
+(define neither
+    (lambda (pred)
+        (lambda (arg1 arg2)
+            (not (or (pred arg1) (pred arg2))))))
+
+(define set-equal
+    (lambda (objl)
+        (lambda (obj2)
+            (or (and ((neither set?) objl obj2)
+                     (equal? objl obj2))
+                (and ((both set?) objl obj2)
+                     ((subset objl) obj2)
+                     ((subset obj2) objl))))))
+
+(define element (compose there-exists set-equal))
+
+(define contains (lambda (set)
+    (lambda (obj)
+        ((element obj) set))))
+
+(define intersection
+    (lambda args
+        (letrec ((helper (lambda (s1 s2)
+                            (if (empty-set? s1)
+                                the-empty-set
+                                (let ((elem (pick s1)))
+                                    (if ((contains s2) elem)
+                                        (adjoin elem (helper ((residue elem) s1) s2))
+                                        (helper ((residue elem) s1) s2))))))
+                 (foldLeft (lambda (args)
+                                (cond ((null? args) the-empty-set)
+                                       ((empty-set? (car args)) the-empty-set)
+                                       ((null? (cdr args)) (car args))
+                                       ((empty-set? (cadr args)) the-empty-set)
+                                       (else (letrec ((s1 (car args))
+                                                      (s2 (cadr args)))
+                                                     (foldLeft (cons (helper s1 s2) (cddr args)))))))))
+            (foldLeft args))))
+
+(writeln (intersection (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 1 5 6 3 7)))
+(newline)
+
+(define union
+    (lambda args
+        (letrec ((helper (lambda (s1 s2)
+                            (if (empty-set? s1)
+                                s2
+                                (let ((elem (pick s1)))
+                                    (if (not ((contains s2) elem))
+                                        (adjoin elem (helper ((residue elem) s1) s2))
+                                        (helper ((residue elem) s1) s2))))))
+                 (foldLeft (lambda (args)
+                                (cond ((null? args) the-empty-set)
+                                       ((empty-set? (car args)) the-empty-set)
+                                       ((null? (cdr args)) (car args))
+                                       ((empty-set? (cadr args)) the-empty-set)
+                                       (else (letrec ((s1 (car args))
+                                                      (s2 (cadr args)))
+                                                     (foldLeft (cons (helper s1 s2) (cddr args)))))))))
+            (foldLeft args))))
+
+(writeln (union (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 2 1)))
+(newline)
+
+(define (flat-set empty containsProc)
+    (letrec ((helper (lambda (s1 s2)
+                            (if (empty-set? s1)
+                                (empty s1 s2)
+                                (let ((elem (pick s1)))
+                                    (if (containsProc ((contains s2) elem))
+                                        (adjoin elem (helper ((residue elem) s1) s2))
+                                        (helper ((residue elem) s1) s2))))))
+             (foldLeft (lambda (args)
+                            (cond ((null? args) the-empty-set)
+                                    ((empty-set? (car args)) the-empty-set)
+                                    ((null? (cdr args)) (car args))
+                                    ((empty-set? (cadr args)) the-empty-set)
+                                    (else (letrec ((s1 (car args))
+                                                    (s2 (cadr args)))
+                                                    (foldLeft (cons (helper s1 s2) (cddr args)))))))))
+            foldLeft))
+
+(define intersection-flat (lambda args ((flat-set (lambda (x y) the-empty-set) (lambda (x) x)) args)))
+
+(writeln (intersection-flat (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 1 5 6 3 7)))
+(newline)
+
+(define union-flat (lambda args ((flat-set (lambda (x y) y) (lambda (x) (not x))) args)))
+
+(writeln (union-flat (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 2 1)))
+(newline)
+
 (exit)
