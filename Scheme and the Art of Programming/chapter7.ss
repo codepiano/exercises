@@ -220,7 +220,7 @@
                               (else (cons (helper (car ls)) (helper (cdr ls))))))))
         helper))
 
-(display ((subst-all-m 1 0)'(0 1 2 1 2)))
+(display ((subst-all-m 1 0) '(0 1 2 1 2)))
 (newline)
 (display ((subst-all-m 1 0) '(0 1 2 ((0 1 2)))))
 (newline)
@@ -288,7 +288,7 @@
 (newline)
 
 
-(display '--------7.18)
+(display '--------7.20)
 (newline)
 
 (define is-divisible-by?
@@ -311,4 +311,259 @@
 (newline)
 (display (prime? 19))
 (newline)
+
+(display '--------7.22)
+(newline)
+
+(define flat-recur (lambda (seed list-proc)
+    (letrec
+        ((helper
+            (lambda (ls)
+                (if (null? ls)
+                seed
+                (list-proc (car ls) (helper (cdr ls)))))))
+        helper)))
+
+(define (mult-by-scalar n)
+    (flat-recur '() (lambda (x l) (cons (* n x) l))))
+
+(display ((mult-by-scalar 3) '(1 -2 3 -4)))
+(newline)
+(display ((mult-by-scalar 5) '()))
+(newline)
+
+(display '--------7.23)
+(newline)
+
+(define (filter-out pred ls)
+    (letrec ((filter-out-c (flat-recur '()
+                                        (lambda (x y) 
+                                            (if (pred x)
+                                                y
+                                                (cons x y))))))
+            (filter-out-c ls)))
+
+(display (filter-out odd? '(1 2 3 4 5 6)))
+(newline)
+
+
+(display '--------7.24)
+(newline)
+
+(define (insert-left-m new old)
+    (flat-recur '() (lambda (x y)
+                        (cond ((equal? old x) (cons new (cons old y)))
+                               (else (cons x y))))))
+
+(define (insert-left new old ls)
+    ((insert-left-m new old) ls))
+
+(display (insert-left 'z 'a '(a b a c a)))
+(newline)
+(display (insert-left 0 1 '(0 1 0 1)))
+(newline)
+(display (insert-left 'dog 'cat '(my dog is fun)))
+(newline)
+(display (insert-left 'two 'one '()))
+(newline)
+
+(display '--------7.25)
+(newline)
+
+(define (partial-sum proc x y)
+    (if (> x y)
+        0
+        (+ (proc x) (partial-sum proc (add1 x) y))))
+
+(display (partial-sum (lambda (m) (* m m)) 3 7))
+(newline)
+
+(define (partial-product proc x y)
+    (if (> x y)
+        1
+        (* (proc x) (partial-product proc (add1 x) y))))
+        
+(display (partial-product (lambda (m) (* m m)) 3 7))
+(newline)
+
+(define (partial seed proc)
+    (letrec ((pow (lambda (x) (* x x)))
+             (helper (lambda (x y)
+                 (if (> x y)
+                     seed
+                     (proc (pow x) (helper (add1 x) y))))))
+        helper))
+
+
+(define partial-sum-new (partial 0 +))
+
+(display (partial-sum-new 3 7))
+(newline)
+
+(define partial-product-new (partial 1 *))
+
+(display (partial-product-new 3 7))
+(newline)
+
+(display '--------7.26)
+(newline)
+
+(define remove-all-c
+    (lambda (item)
+        (letrec ((helper
+            (lambda (ls)
+                (if (null? ls)
+                    '()
+                    (let ((a (car ls)))
+                        (if (or (pair? a) (null? a))
+                            (cons (helper a) (helper (cdr ls)))
+                            (if (equal? item a)
+                                (helper (cdr ls))
+                                (cons a (helper (cdr ls))))))))))
+            helper)))
+
+(display ((remove-all-c 0) '(0 1 0 1 2 3 4 5)))
+(newline)
+(display ((remove-all-c 0) '(0 0 0 0)))
+(newline)
+
+(define product-all
+    (letrec ((helper
+                (lambda (ls)
+                    (if (null? ls)
+                        1
+                        (let ((a (car ls)))
+                            (if (or (pair? a) (null? a))
+                                (* (helper a) (helper (cdr ls)))
+                                (* a (helper (cdr ls)))))))))
+        helper))
+
+(display (product-all '((1 2) 2 (3 4 5))))
+(newline)
+
+(display '--------7.27)
+(newline)
+
+(define deep-recur
+    (lambda (seed item-proc list-proc)
+        (letrec
+            ((helper
+                (lambda (ls)
+                    (if (null? ls)
+                        seed
+                        (let ((a (car ls)))
+                            (if (or (pair? a) (null? a))
+                                (list-proc (helper a) (helper (cdr ls)))
+                                (item-proc a (helper (cdr ls)))))))))
+            helper)))
+
+(define remove-all-c-deep (lambda (item)
+                            (deep-recur '()
+                                        (lambda (x ls)
+                                            (if (equal? item x)
+                                                ls
+                                                (cons x ls)))
+                                        cons)))
+
+(display ((remove-all-c-deep 0) '(0 1 (0) 1 2 (((3 (0 ((0) 0) 0) 4 5))))))
+(newline)
+(display ((remove-all-c-deep 0) '(0 0 0 0 (0) (((0))))))
+(newline)
+
+(define product-all-deep (deep-recur 1 * *))
+
+(display (product-all-deep '((1 2) 2 (3 4 5))))
+(newline)
+
+(display '--------7.28)
+(newline)
+
+(define (filter-out-all-c pred)
+    (deep-recur '()
+                (lambda (x ls)
+                        (if (pred x)
+                            ls
+                            (cons x ls)))
+                cons))
+
+(define (filter-out-all pred ls) ((filter-out-all-c pred) ls))
+
+(display (filter-out-all (lambda (x) (equal? x 0)) '(0 1 2 3 0 1 2 3)))
+(newline)
+
+(display '--------7.29)
+(newline)
+
+(define (subst-all-m-deep a b)
+    (deep-recur '()
+                (lambda (x ls)
+                        (if (equal? a x)
+                            (cons b ls)
+                            (cons x ls)))
+                cons))
+
+(display ((subst-all-m-deep 1 0) '(0 1 2 1 2)))
+(newline)
+(display ((subst-all-m-deep 1 0) '(0 1 2 ((0 1 2)))))
+(newline)
+
+(display '--------7.30)
+(newline)
+
+(define (reverse-all ls)
+    ((deep-recur '()
+                (lambda (x y) 
+                    (if (null? y)
+                        (list x)
+                        (append y (list x))))
+                (lambda (x y) 
+                    (if (null? y)
+                         x
+                        (append y (list x))))) ls))
+
+(display (reverse-all '(1 2 3)))
+(newline)
+(display (reverse-all '((1 2 3) (4 (5 (6 (7 8 9) 10) 11) 12) 13)))
+(newline)
+
+(display '--------7.31)
+(newline)
+
+(define (flat-recur-deep seed list-proc)
+    (deep-recur seed
+                list-proc
+                append))
+
+(define (mult-by-scalar-deep n)
+    (flat-recur-deep '() (lambda (x l) (cons (* n x) l))))
+
+(display ((mult-by-scalar-deep 3) '(1 -2 3 -4)))
+(newline)
+(display ((mult-by-scalar-deep 5) '()))
+(newline)
+
+
+(display '--------7.32)
+(newline)
+
+(define (deep-recur-flat seed item-proc list-proc)
+    (letrec ((helper (flat-recur seed (lambda (x y)
+                                            (if (or (pair? x) (null? x))
+                                                (list-proc (helper x) y)
+                                                (item-proc x y))))))
+            helper))
+
+(define remove-all-c-deep-flat (lambda (item)
+                                    (deep-recur-flat '()
+                                                     (lambda (x ls)
+                                                         (if (equal? item x)
+                                                             ls
+                                                             (cons x ls)))
+                                                     cons)))
+
+(display ((remove-all-c-deep-flat 0) '(0 1 (0) 1 2 (((3 (0 ((0) 0) 0) 4 5))))))
+(newline)
+(display ((remove-all-c-deep-flat 0) '(0 0 0 0 (0) (((0))))))
+(newline)
+
 (exit)
