@@ -34,4 +34,8 @@ code runner config
     (+ n 1))
 
 (define (atom? x) (not (pair? x)))
+
+(define compose (lambda (f g)
+    (lambda (x)
+        (f (g x)))))
 ```
