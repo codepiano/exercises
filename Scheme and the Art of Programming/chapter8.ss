@@ -521,7 +521,6 @@
 (display '--------8.18)
 (newline)
 
-; ???, do not understand
 (define (symmetric? r)
     (set-equal? r (inverse-relation r)))
 
@@ -567,5 +566,56 @@
 
 (writeln (function-compose (make-relation '(10 100) '(11 101) '(12 102) '(13 100) '(14 104)) 
                            (make-relation '(1 10) '(2 11) '(3 10) '(4 12) '(5 13))))
+(newline)
+
+(display '--------8.20)
+(newline)
+
+(define (relation-compose f g)
+    (letrec ((gr (range g))
+             (gd (domain g))
+             (fd (domain f))
+             (vg (value g))
+             (subf (subrelation/1st f))
+             (subg (subrelation/1st g))
+             (helper (lambda (x)
+                        (family-union (set-map subf (set-map op-2nd (subg x)))))))
+             (if (not ((subset gr) fd))
+                 the-empty-set
+                 (letrec ((gf (family-union
+                                (set-map (lambda (x)
+                                    (cartesian-product (make-set x)
+                                                       (set-map op-2nd (helper x)))) gd))))
+                    gf))))
+
+(writeln (relation-compose (make-relation '(2 1) '(3 1) '(1 3) '(2 2) '(3 3)) 
+                           (make-relation '(1 2) '(2 3) '(2 2) '(3 2) '(1 1))))
+(newline)
+
+(display '--------8.21)
+(newline)
+
+(define (transitive? r)
+    ((subset (relation-compose r r)) r))
+
+
+(writeln (transitive? (make-relation '(1 2) '(1 3) '(1 4) '(2 3) '(2 4) '(3 4))))
+(writeln (transitive? (make-relation '(0 0) '(1 1) '(2 2) '(3 3) '(4 4))))
+(writeln (transitive? (make-relation '(1 1) '(1 2) '(3 2) '(2 1))))
+(newline)
+
+(display '--------8.21)
+(newline)
+
+(define (equivalence-relation? rel)
+    (and (reflexive? rel)
+         (symmetric? rel)
+         (transitive? rel)))
+
+
+(writeln (equivalence-relation? (make-relation '(0 0) '(1 1) '(2 2) '(3 3))))
+(writeln (equivalence-relation? (make-relation '(0 0) '(0 1) '(1 0) '(1 1))))
+(writeln (equivalence-relation? (make-relation '(0 0) '(0 1) '(1 1) '(2 2))))
+(newline)
 
 (exit)
