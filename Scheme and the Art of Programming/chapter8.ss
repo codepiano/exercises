@@ -61,7 +61,8 @@
     (if ((neither-both pair?) a b)
         (eqv? a b)
         (if ((both pair?) a b)
-            (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b))))))
+            (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b)))
+            #f)))
 
 (writeln (equal? '(a (b c (d e) f)) ' (a (b c (d e) f))))
 (writeln (equal? '(a ((b d) c) e) ' (a (b d) c e)))
@@ -226,6 +227,10 @@
 (display '--------8.8)
 (newline)
 
+(define contains (lambda (set)
+    (lambda (obj)
+        ((element obj) set))))
+
 (define neither
     (lambda (pred)
         (lambda (arg1 arg2)
@@ -241,20 +246,16 @@
         ((superset s2) s1))))
 
 (define set-equal
-    (lambda (objl)
+    (lambda (obj1)
         (lambda (obj2)
-            (or (and ((neither set?) objl obj2)
-                     (equal? objl obj2))
-                (and ((both set?) objl obj2)
-                     ((subset objl) obj2)
-                     ((subset obj2) objl))))))
+            (or (and ((neither set?) obj1 obj2)
+                     (equal? obj1 obj2))
+                (and ((both set?) obj1 obj2)
+                     ((subset obj1) obj2)
+                     ((subset obj2) obj1))))))
 
 
 (define element (compose there-exists set-equal))
-
-(define contains (lambda (set)
-    (lambda (obj)
-        ((element obj) set))))
 
 (define intersection
     (lambda args
@@ -269,13 +270,13 @@
                                 (cond ((null? args) the-empty-set)
                                        ((empty-set? (car args)) the-empty-set)
                                        ((null? (cdr args)) (car args))
-                                       ((empty-set? (cadr args)) the-empty-set)
                                        (else (letrec ((s1 (car args))
                                                       (s2 (cadr args)))
                                                      (foldLeft (cons (helper s1 s2) (cddr args)))))))))
             (foldLeft args))))
 
 (writeln (intersection (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 1 5 6 3 7)))
+(writeln (intersection (make-set 1 3 4 5) the-empty-set (make-set 1 5 6 3 7)))
 (newline)
 
 (define union
@@ -291,13 +292,13 @@
                                 (cond ((null? args) the-empty-set)
                                        ((empty-set? (car args)) the-empty-set)
                                        ((null? (cdr args)) (car args))
-                                       ((empty-set? (cadr args)) the-empty-set)
                                        (else (letrec ((s1 (car args))
                                                       (s2 (cadr args)))
                                                      (foldLeft (cons (helper s1 s2) (cddr args)))))))))
             (foldLeft args))))
 
 (writeln (union (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 2 1)))
+(writeln (union (make-set 1 2 3 4) (make-set 1 3 4 5) the-empty-set (make-set 2 1)))
 (newline)
 
 (define (flat-set empty containsProc)
@@ -312,20 +313,25 @@
                             (cond ((null? args) the-empty-set)
                                     ((empty-set? (car args)) the-empty-set)
                                     ((null? (cdr args)) (car args))
-                                    ((empty-set? (cadr args)) the-empty-set)
                                     (else (letrec ((s1 (car args))
                                                     (s2 (cadr args)))
                                                     (foldLeft (cons (helper s1 s2) (cddr args)))))))))
             foldLeft))
 
-(define intersection-flat (lambda args ((flat-set (lambda (x y) the-empty-set) (lambda (x) x)) args)))
+(define intersection-flat (lambda args ((flat-set
+                                            (lambda (x y) the-empty-set)
+                                            (lambda (x) x)) args)))
 
 (writeln (intersection-flat (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 1 5 6 3 7)))
+(writeln (intersection-flat (make-set 1 3 4 5) the-empty-set (make-set 1 5 6 3 7)))
 (newline)
 
-(define union-flat (lambda args ((flat-set (lambda (x y) y) (lambda (x) (not x))) args)))
+(define union-flat (lambda args ((flat-set
+                                    (lambda (x y) y)
+                                    (lambda (x) (not x))) args)))
 
 (writeln (union-flat (make-set 1 2 3 4) (make-set 1 3 4 5) (make-set 2 1)))
+(writeln (union-flat (make-set 1 2 3 4) (make-set 1 3 4 5) the-empty-set (make-set 2 1)))
 (newline)
 
 (display '--------8.9)
@@ -358,24 +364,9 @@
 (display '--------8.10)
 (newline)
 
-(define remove-equal
-    (lambda (item ls)
-        (cond
-            ((null? ls) '())
-            ((set-equal? (car ls) item) (remove-equal item (cdr ls)))
-            (else (cons (car ls) (remove-equal item (cdr ls)))))))
-            
-(define residue-equal
-    (lambda (elem)
-        (lambda (s)
-            (let ((ls (remove-equal elem (cdr s))))
-                (cond
-                    ((null? ls) the-empty-set)
-                    (else (cons set-tag ls)))))))
-
 (define set-equal?
-    (lambda (objl obj2)
-        ((set-equal objl) obj2)))
+    (lambda (obj1 obj2)
+        ((set-equal obj1) obj2)))
 
 (define adjoin-c
     (lambda (elem)
@@ -388,36 +379,17 @@
             the-empty-set
             (let ((elem (pick s)))
                  (adjoin (proc elem)
-                    (set-map proc ((residue-equal elem) s)))))))
-
-(define union-c
-    (lambda args
-        (letrec ((helper (lambda (s1 s2)
-                            (if (empty-set? s1)
-                                s2
-                                (let ((elem (pick s1)))
-                                    (if (not ((contains s2) elem))
-                                        (adjoin elem (helper ((residue-equal elem) s1) s2))
-                                        (helper ((residue-equal elem) s1) s2))))))
-                 (foldLeft (lambda (args)
-                                (cond ((null? args) the-empty-set)
-                                       ((empty-set? (car args)) the-empty-set)
-                                       ((null? (cdr args)) (car args))
-                                       ((empty-set? (cadr args)) the-empty-set)
-                                       (else (letrec ((s1 (car args))
-                                                      (s2 (cadr args)))
-                                                     (foldLeft (cons (helper s1 s2) (cddr args)))))))))
-            (foldLeft args))))
+                    (set-map proc ((residue elem) s)))))))
 
 (define (power-set s)
     (letrec ((generate (lambda (x y)
                         (let ((n (set-map (adjoin-c x) y)))
-                            (union-c n y))))
+                            (union n y))))
              (helper (lambda (l)
                         (if (empty-set? l)
                             (make-set the-empty-set)
                             (let ((elem (pick l)))
-                                (generate elem (helper ((residue-equal elem) l))))))))
+                                (generate elem (helper ((residue elem) l))))))))
         (helper s)))
 
 (writeln (power-set (make-set 'a 'b 'c)))
@@ -439,10 +411,161 @@
             the-empty-set
             (let ((elem (pick s)))
                 (if (= n (cardinal elem))
-                    (adjoin elem ((select-by-cardinal n) ((residue-equal elem) s)))
-                    ((select-by-cardinal n) ((residue-equal elem) s)))))))
+                    (adjoin elem ((select-by-cardinal n) ((residue elem) s)))
+                    ((select-by-cardinal n) ((residue elem) s)))))))
 
 (writeln ((select-by-cardinal 2) (make-set (make-set 'a) (make-set 'a 'b) (make-set 'a 'b 'c) (make-set 'b 'c) (make-set 'b))))
 (newline)
+
+(display '--------8.12)
+(newline)
+
+(define make-op-list list)
+(define op?-list (lambda (ls) (and (pair? ls) (pair? (cdr ls)) (null? (cddr ls)))))
+(define op-1st-list car)
+(define op-2nd-list cadr)
+
+(define make-op cons)
+(define op? pair?)
+(define op-1st car)
+(define op-2nd cdr)
+
+(display '--------8.13)
+(newline)
+
+(define (relation? s)
+    ((for-all op?) s))
+
+(writeln (relation? (make-set (make-op 'a 0) (make-op 'a 1) (make-op 'c 1))))
+(writeln (relation? (make-set 1 (make-op 'a 1) (make-op 'c 1))))
+(newline)
+
+(display '--------8.14)
+(newline)
+
+(define (inverse-pair p)
+    (if (op? p)
+        (make-op (op-2nd p) (op-1st p))
+        #f))
+
+(define (inverse-relation s)
+    (set-map inverse-pair s))
+
+(writeln (inverse-relation (make-set (make-op 'a 0) (make-op 'a 1) (make-op 'c 1))))
+(newline)
+
+(display '--------8.15)
+(newline)
+
+(define subrelation/1st
+    (lambda (rel)
+        (lambda (arg)
+            ((set-builder
+                (lambda (x) ((set-equal (op-1st x)) arg))
+                the-empty-set) rel))))
+
+(define function?
+    (lambda (rel)
+        (or (empty-set? rel)
+            (let ((subrel ((subrelation/1st rel) (op-1st (pick rel)))))
+                (and (= (cardinal subrel) 1)
+                    (function? (difference rel subrel)))))))
+
+(define (one-to-one? s)
+    (function? (inverse-relation s)))
+
+(writeln (one-to-one? (make-set (make-op 'a 0) (make-op 'a 1) (make-op 'c 1))))
+(writeln (one-to-one? (make-set (make-op 'a 0) (make-op 'a 1) (make-op 'c 2))))
+(newline)
+
+(display '--------8.16)
+(newline)
+
+(define list->set (lambda (ls)
+    (apply make-set ls)))
+
+(define make-relation
+    (lambda args
+        (if (null? args)
+            the-empty-set
+            (if ((for-all op?) args)
+                (list->set (map (lambda (x) (make-op (car x) (cadr x))) args)) 
+                the-empty-set))))
+
+
+(writeln (make-relation '(1 2) '(1 3) '(2 3)))
+(newline)
+
+(display '--------8.17)
+(newline)
+
+(define cartesian-product
+    (lambda (s1 s2)
+        (if (empty-set? s1)
+            the-empty-set
+            (let ((elem (pick s1)))
+                (union (set-map (lambda (x) (make-op elem x)) s2)
+                        (cartesian-product ((residue elem) s1) s2))))))
+
+(define (reflexive? r)
+    (let ((s (set-map op-1st r))
+          (c (contains r)))
+        ((for-all (lambda (x)
+                    (if (c (make-op x x))
+                        #t
+                        #f))) s)))
+
+(writeln (reflexive? (cartesian-product (make-set 1 2 3) (make-set 1 2 3))))
+(writeln (reflexive? (make-relation '(1 1) '(1 2) '(1 3) '(2 1) '(2 2) '(2 3) '(3 1) '(3 2))))
+
+(display '--------8.18)
+(newline)
+
+; ???, do not understand
+(define (symmetric? r)
+    (set-equal? r (inverse-relation r)))
+
+(writeln (symmetric? (cartesian-product (make-set 1 2 3) (make-set 1 2 3))))
+(writeln (symmetric? (make-relation '(1 1) '(1 2) '(1 3) '(2 1) '(2 2) '(2 3) '(3 1))))
+
+(display '--------8.19)
+(newline)
+
+(define domain
+    (lambda (rel)
+        (set-map op-1st rel)))
+
+(define range
+    (lambda (rel)
+        (set-map op-2nd rel)))
+
+(define family-union 
+    (lambda (s)
+        (if (empty-set? s)
+            the-empty-set
+            (let ((elem (pick s)))
+                (union elem (family-union ((residue elem) s)))))))
+
+(define value
+    (lambda (fun)
+        (lambda (arg)
+            (op-2nd (pick ((subrelation/1st fun) arg))))))
+
+(define (function-compose f g)
+    (letrec ((gr (range g))
+             (gd (domain g))
+             (fd (domain f))
+             (vg (value g))
+             (s1 (subrelation/1st f)))
+             (if (not ((subset gr) fd))
+                 the-empty-set
+                 (letrec ((gf (family-union
+                                (set-map (lambda (x)
+                                    (cartesian-product (make-set x)
+                                                       (set-map op-2nd (s1 (vg x))))) gd))))
+                    gf))))
+
+(writeln (function-compose (make-relation '(10 100) '(11 101) '(12 102) '(13 100) '(14 104)) 
+                           (make-relation '(1 10) '(2 11) '(3 10) '(4 12) '(5 13))))
 
 (exit)
