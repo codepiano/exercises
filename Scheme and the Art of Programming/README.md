@@ -2,7 +2,7 @@
 
 [MIT/GNU Scheme](https://www.gnu.org/software/mit-scheme/)
 
-code runner config
+vscode code runner plugin config
 
 ```javascript
 {
@@ -38,4 +38,10 @@ code runner config
 (define compose (lambda (f g)
     (lambda (x)
         (f (g x)))))
+
+(define (merge rel l1 l2)
+    (cond ((null? l1) l2)
+          ((null? l2) l1)
+          ((rel (car l1) (car l2)) (cons (car l1) (merge rel (cdr l1) l2)))
+          (else (cons (car l2) (merge rel l1 (cdr l2))))))
 ```
