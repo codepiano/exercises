@@ -256,4 +256,160 @@
 (send g 'up!)
 (writeln (send g 'show))
 
+(display '--------12.9)
+(newline)
+
+(define stack-maker
+    (lambda msg
+        (let ((stk '()))
+            (lambda msg
+                (case (1st msg)
+                    ((type) "stack")
+                    ((empty?) (null? stk))
+                    ((push!) (for-effect-only
+                                (set! stk (cons (2nd msg) stk))))
+                    ((top) (if (null? stk)
+                               (error "top: The stack is empty.")
+                               (car stk)))
+                    ((pop!) (for-effect-only
+                                (if (null? stk)
+                                    (error "pop!: The stack is empty.")
+                                    (set! stk (cdr stk)))))
+                    ((size) (length stk))
+                    ((print) (display "TOP: ")
+                                (for-each
+                                    (lambda (x)
+                                        (display x)
+                                        (display " "))
+                                    stk)
+                                (newline))
+                    (else (delegate base-object msg)))))))
+
+(define correct-nested
+    (lambda (ls)
+        (let ((stk (stack-maker)))
+            (letrec ((helper (lambda (ls)
+                                (if (null? ls)
+                                    (send stk 'empty?)
+                                    (cond ((or (number? (car ls)) (symbol? (car ls))) (helper (cdr ls)))
+                                          ((or (string=? (car ls) "(")
+                                               (string=? (car ls) "{")
+                                               (string=? (car ls) "[")) (send stk 'push! (car ls)) (helper (cdr ls)))
+                                          ((or (string=? (car ls) ")")
+                                               (string=? (car ls) "}")
+                                               (string=? (car ls) "]")) (if (send stk 'empty?)
+                                                                        #f
+                                                                        (let ((s (send stk 'top))
+                                                                            (x (car ls)))
+                                                                        (cond ((and (string=? x ")") (not (string=? s "("))) #f)
+                                                                            ((and (string=? x "]") (not (string=? s "["))) #f)
+                                                                            ((and (string=? x "}") (not (string=? s "{"))) #f)
+                                                                            (else (begin (send stk 'pop!)
+                                                                                         (helper (cdr ls))))))))
+                                            (else (helper (cdr ls))))))))
+                (helper ls)))))
+
+(define exp1 '(13 + 5 * "{" "[" 14 - 3 * "(" 12 - 7 ")" "]" - 15 "}"))
+(writeln (correct-nested exp1))
+(define exp2 '(13 + 5 * "[" "[" 14 - 3 * "(" 12 - 7 ")" "]" - 15 "}"))
+(writeln (correct-nested exp2))
+
+(display '--------12.10)
+(newline)
+(display '--------12.11)
+(newline)
+
+(define queue-maker
+    (lambda ()
+        (let ((q '()))
+            (lambda msg
+                (case (1st msg)
+                    ((type) "queue")
+                    ((empty?) (null? q))
+                    ((enqueue!) (for-effect-only
+                                    (let ((list-of-item (cons (2nd msg) '())))
+                                        (if (null? q)
+                                            (set! q list-of-item)
+                                            (append! q list-of-item)))))
+                    ((enqueue-list!) (for-effect-only
+                                        (let ((list-of-item (2nd msg)))
+                                            (if (null? q)
+                                                (set! q list-of-item)
+                                                (append! q list-of-item)))))
+                    ((enqueue-many!) (for-effect-only
+                                        (let ((list-of-item (cdr msg)))
+                                            (if (null? q)
+                                                (set! q list-of-item)
+                                                (append! q list-of-item)))))
+                    ((front) (if (null? q)
+                                (error "front: The queue is empty.")
+                                (car q)))
+                    ((dequeue!) (for-effect-only
+                                    (if (null? q)
+                                        (error "dequeue!: The queue is empty.")
+                                        (set! q (cdr q)))))
+                    ((size) (length q))
+                    ((print) (display "FRONT: ")
+                             (for-each
+                                (lambda (x) (display x) (display " "))
+                                            q)
+                             (newline))
+                    (else (delegate base-object msg)))))))
+
+(define q1 (queue-maker))
+(send q1 'enqueue-list! '(1 2 3))
+(writeln (send q1 'print))
+(send q1 'enqueue-list! '(4 5 6))
+(writeln (send q1 'print))
+
+(define q2 (queue-maker))
+(send q2 'enqueue-many! 1 2 3)
+(writeln (send q2 'print))
+(send q2 'enqueue-many! 4 5 6)
+(writeln (send q2 'print))
+
+(display '--------12.12)
+(newline)
+
+(define marker (list '()))
+
+(define (queue->list q)
+    (send q 'enqueue! marker)
+    (letrec ((helper (lambda ()
+                        (if (send q 'empty?)
+                            '()
+                            (let ((front (send q 'front)))
+                                (if (equal? front marker)
+                                    '()
+                                    (begin (send q 'enqueue! front)
+                                           (send q 'dequeue!)
+                                           (cons front (helper)))))))))
+        (helper)))
+
+(define q3 (queue-maker))
+(send q3 'enqueue-list! '(1 2 3 4 5 6))
+(send q3 'print)
+(writeln (queue->list q3))
+
+(display '--------12.13)
+(newline)
+
+(define (queue->list-size q)
+    (let ((size (send q 'size)))
+        (letrec ((helper (lambda (i)
+                        (if (send q 'empty?)
+                            '()
+                            (if (equal? i size)
+                                '()
+                                (let ((front (send q 'front)))
+                                    (begin (send q 'enqueue! front)
+                                       (send q 'dequeue!)
+                                       (cons front (helper (add1 i))))))))))
+            (helper 0))))
+
+(define q4 (queue-maker))
+(send q4 'enqueue-list! '(1 2 3 4 5 6))
+(send q4 'print)
+(writeln (queue->list-size q4))
+
 (exit)
