@@ -44,4 +44,7 @@ vscode code runner plugin config
           ((null? l2) l1)
           ((rel (car l1) (car l2)) (cons (car l1) (merge rel (cdr l1) l2)))
           (else (cons (car l2) (merge rel l1 (cdr l2))))))
+
+(define 1st car)
+(define 2nd cadr)
 ```
