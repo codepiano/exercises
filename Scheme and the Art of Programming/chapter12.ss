@@ -412,4 +412,172 @@
 (send q4 'print)
 (writeln (queue->list-size q4))
 
+(display '--------12.15)
+(newline)
+
+(define circular-list-maker 
+    (lambda ()
+        (let ((marker '())
+              (size-gauge (gauge-maker add1 sub1)))
+            (lambda msg
+                (case (1st msg)
+                      ((type) "circular list")
+                      ((empty?) (null? marker))
+                      ((insert!) (send size-gauge 'up!)
+                                 (for-effect-only
+                                    (if (null? marker)
+                                        (begin
+                                            (set! marker (cons (2nd msg) '()))
+                                            (set-cdr! marker marker))
+                                        (set-cdr! marker (cons (2nd msg) (cdr marker))))))
+                      ((head) (if (null? marker)
+                                (error "head: The list is empty.")
+                                (car (cdr marker))))
+                      ((delete!) (for-effect-only
+                                    (if (null? marker)
+                                        (error "delete!: The circular list is empty.")
+                                        (begin
+                                            (send size-gauge 'down!)
+                                            (if (eq? marker (cdr marker))
+                                                (set! marker '())
+                                                (set-cdr! marker (cdr (cdr marker))))))))
+                    ((move!) (for-effect-only
+                                    (if (null? marker)
+                                        (error "move!: The circular list is empty.")
+                                        (set! marker (cdr marker)))))
+                    ((size) (send size-gauge 'show))
+                    ((print) (if (not (null? marker))
+                                 (let ((next (cdr marker)))
+                                    (set-cdr! marker '())
+                                    (for-each (lambda (x) (display x) (display " "))
+                                                next)
+                                    (set-cdr! marker next)))
+                                 (newline))
+                    (else (delegate base-object msg)))))))
+
+(define stack-maker 
+    (lambda ()
+        (let ((c (circular-list-maker)))
+            (lambda msg
+                (case (1st msg)
+                    ((type) "stack")
+                    ((push!) (send c 'insert! (2nd msg)))
+                    ((pop!) (send c 'delete!))
+                    ((top) (send c 'head))
+                    ((print) (display "TOP: ") (send c 'print))
+                    ((empty? size) (delegate c msg))
+                    (else (delegate base-object msg)))))))
+
+(define queue-maker 
+    (lambda ()
+        (let ((c (circular-list-maker))) 
+            (lambda msg
+                (case (1st msg)
+                      ((type) "queue")
+                      ((enqueue!) (send c 'insert! (2nd msg)) (send c 'move!))
+                      ((dequeue!) (send c 'delete!))
+                      ((front) (send c 'head))
+                      ((print) (display "FRONT: ") (send c 'print))
+                      ((empty? size) (delegate c msg))
+                      (else (delegate base-object msg)))))))
+
+
+(display '--------12.18)
+(newline)
+
+(define circular-list-maker-local
+    (lambda ()
+        (let ((marker '())
+              (count 0))
+            (lambda msg
+                (case (1st msg)
+                      ((type) "circular list")
+                      ((empty?) (null? marker))
+                      ((insert!) (set! count (+ count 1))
+                                 (for-effect-only
+                                    (if (null? marker)
+                                        (begin
+                                            (set! marker (cons (2nd msg) '()))
+                                            (set-cdr! marker marker))
+                                        (set-cdr! marker (cons (2nd msg) (cdr marker))))))
+                      ((head) (if (null? marker)
+                                (error "head: The list is empty.")
+                                (car (cdr marker))))
+                      ((delete!) (for-effect-only
+                                    (if (null? marker)
+                                        (error "delete!: The circular list is empty.")
+                                        (begin
+                                            (set! count (- count 1))
+                                            (if (eq? marker (cdr marker))
+                                                (set! marker '())
+                                                (set-cdr! marker (cdr (cdr marker))))))))
+                      ((move!) (for-effect-only
+                                      (if (null? marker)
+                                          (error "move!: The circular list is empty.")
+                                          (set! marker (cdr marker)))))
+                      ((size) count)
+                      ((print) (if (not (null? marker))
+                                    (let ((next (cdr marker)))
+                                         (set-cdr! marker '())
+                                         (for-each (lambda (x) (display x) (display " "))
+                                                  next)
+                                         (set-cdr! marker next)))
+                                (newline))
+                      (else (delegate base-object msg)))))))
+
+(define cl (circular-list-maker-local))
+(send cl 'insert! 1)
+(send cl 'insert! 2)
+(send cl 'insert! 3)
+(writeln (send cl 'size))
+
+(define circular-list-maker-no-var
+    (lambda ()
+        (let ((marker '()))
+            (lambda msg
+                (case (1st msg)
+                      ((type) "circular list")
+                      ((empty?) (null? marker))
+                      ((insert!) (for-effect-only
+                                    (if (null? marker)
+                                        (begin
+                                            (set! marker (cons (2nd msg) '()))
+                                            (set-cdr! marker marker))
+                                        (set-cdr! marker (cons (2nd msg) (cdr marker))))))
+                      ((head) (if (null? marker)
+                                (error "head: The list is empty.")
+                                (car (cdr marker))))
+                      ((delete!) (for-effect-only
+                                    (if (null? marker)
+                                        (error "delete!: The circular list is empty.")
+                                        (if (eq? marker (cdr marker))
+                                            (set! marker '())
+                                            (set-cdr! marker (cdr (cdr marker)))))))
+                      ((move!) (for-effect-only
+                                      (if (null? marker)
+                                          (error "move!: The circular list is empty.")
+                                          (set! marker (cdr marker)))))
+                      ((size) (if  (null? marker)
+                                   0
+                                   (let ((next (cdr marker)))
+                                      (set-cdr! marker '())
+                                      (let ((c (length next))) 
+                                        (set-cdr! marker next)
+                                        c))))
+                      ((print) (if (not (null? marker))
+                                   (let ((next (cdr marker)))
+                                      (set-cdr! marker '())
+                                      (for-each (lambda (x) (display x) (display " "))
+                                                  next)
+                                        (set-cdr! marker next)))
+                                (newline))
+                                   
+                      (else (delegate base-object msg)))))))
+
+(define cnv (circular-list-maker-no-var))
+(send cnv 'insert! 1)
+(send cnv 'insert! 2)
+(send cnv 'insert! 3)
+(writeln (send cnv 'size))
+(writeln (send cnv 'print))
 (exit)
