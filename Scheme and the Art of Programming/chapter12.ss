@@ -418,7 +418,7 @@
 (define circular-list-maker 
     (lambda ()
         (let ((marker '())
-              (size-gauge (gauge-maker add1 sub1)))
+              (size-gauge (gauge-maker 0 add1 sub1)))
             (lambda msg
                 (case (1st msg)
                       ((type) "circular list")
@@ -530,6 +530,7 @@
 (send cl 'insert! 2)
 (send cl 'insert! 3)
 (writeln (send cl 'size))
+(writeln (send cl 'print))
 
 (define circular-list-maker-no-var
     (lambda ()
@@ -580,4 +581,158 @@
 (send cnv 'insert! 3)
 (writeln (send cnv 'size))
 (writeln (send cnv 'print))
+
+
+(display '--------12.20)
+(newline)
+
+(define circular-list-maker-reverse
+    (lambda ()
+        (let ((marker '())
+              (size-gauge (gauge-maker 0 add1 sub1)))
+            (lambda msg
+                (case (1st msg)
+                      ((type) "circular list")
+                      ((empty?) (null? marker))
+                      ((insert!) (send size-gauge 'up!)
+                                 (for-effect-only
+                                    (if (null? marker)
+                                        (begin
+                                            (set! marker (cons (2nd msg) '()))
+                                            (set-cdr! marker marker))
+                                        (set-cdr! marker (cons (2nd msg) (cdr marker))))))
+                      ((head) (if (null? marker)
+                                (error "head: The list is empty.")
+                                (car (cdr marker))))
+                      ((delete!) (for-effect-only
+                                    (if (null? marker)
+                                        (error "delete!: The circular list is empty.")
+                                        (begin
+                                            (send size-gauge 'down!)
+                                            (if (eq? marker (cdr marker))
+                                                (set! marker '())
+                                                (set-cdr! marker (cdr (cdr marker))))))))
+                      ((move!) (for-effect-only
+                                      (if (null? marker)
+                                          (error "move!: The circular list is empty.")
+                                          (set! marker (cdr marker)))))
+                      ((size) (send size-gauge 'show))
+                      ((print) (if (not (null? marker))
+                                  (let ((next (cdr marker)))
+                                      (set-cdr! marker '())
+                                      (for-each (lambda (x) (display x) (display " "))
+                                                  next)
+                                      (set-cdr! marker next)))
+                                  (newline))
+                      ((reverse) (if (not (null? marker))
+                                      (let ((tail (car marker))
+                                          (next (cdr marker)))
+                                          (set-cdr! marker '())
+                                          (set! next (reverse next))
+                                          (set-car! marker tail)
+                                          (set-cdr! marker next))))
+                      (else (delegate base-object msg)))))))
+
+(define cr (circular-list-maker-reverse))
+(send cr 'insert! 1)
+(send cr 'insert! 2)
+(send cr 'insert! 3)
+(writeln (send cr 'size))
+(writeln (send cr 'print))
+(send cr 'reverse)
+(writeln (send cr 'print))
+(writeln (send cr 'head))
+(send cr 'delete!)
+(writeln (send cr 'head))
+(send cr 'delete!)
+(writeln (send cr 'head))
+(send cr 'delete!)
+
+(display '--------12.21)
+(newline)
+
+(define lookup
+    (lambda (obj table success-proc failure-proc)
+        (letrec ((lookup (lambda (table)
+            (if (null? table)
+                (failure-proc)
+                    (let ((pr (car table)))
+                        (if (equal? (car pr) obj)
+                            (success-proc pr)
+                            (lookup (cdr table))))))))
+            (lookup table))))
+
+(define bucket-maker
+  (lambda ()
+    (let ((table '()))
+      (lambda msg
+        (case (1st msg)
+          ((type) "bucket")
+          ((lookup) (let ((key (2nd msg))
+                          (succ (3rd msg))
+                          (fail (4th msg)))
+                      (lookup key table (lambda (pr) (succ (cdr pr))) fail)))
+          ((update!) (for-effect
+                       (let ((key (2nd msg))
+                             (updater (3rd msg))
+                             (initializer (4th msg)))
+                         (lookup key 
+                                 table 
+                                 (lambda (pr) (set-cdr! pr (updater (cdr pr))))
+                                 (lambda ()
+                                   (let ((pr (cons key (initializer key))))
+                                     (set! table (cons pr table))))))))
+          ((update!-lookup) (for-effect
+                                (let ((key (2nd msg))
+                                        (updater (3rd msg))
+                                        (initializer (4th msg)))
+                                    (lookup key 
+                                            table 
+                                            (lambda (pr) (set-cdr! pr (updater (cdr pr))))
+                                            (lambda ()
+                                            (let ((pr (cons key (initializer key))))
+                                                (set! table (cons pr table))))))))
+          (else (delegate base-object msg)))))))
+
+(define memoize
+  (lambda (proc)
+    (let ((bucket (bucket-maker)))
+      (lambda (arg)
+        (send bucket 'update!-lookup arg (lambda (val) val) proc)))))
+
+(display '--------12.24)
+(newline)
+
+(define bucket-maker-re
+  (lambda ()
+    (let ((table '()))
+      (lambda msg
+        (case (1st msg)
+          ((type) "bucket")
+          ((lookup) (let ((key (2nd msg))
+                          (succ (3rd msg))
+                          (fail (4th msg)))
+                      (lookup key table (lambda (pr) (succ (cdr pr))) fail)))
+          ((update!) (for-effect
+                       (let ((key (2nd msg))
+                             (updater (3rd msg))
+                             (initializer (4th msg)))
+                         (lookup key 
+                                 table 
+                                 (lambda (pr) (set-cdr! pr (updater (cdr pr))))
+                                 (lambda ()
+                                   (let ((pr (cons key (initializer key))))
+                                     (set! table (cons pr table))))))))
+          ((re-initalize) (for-effect (set! table '())))
+          (else (delegate base-object msg)))))))
+
+(define hash-table-maker
+  (lambda (size hash-fn)
+    (let ((v ((vector-generator (lambda (i) (bucket-maker))) size)))
+      (lambda msg
+        (case (1st msg)
+          ((type) "hash-table")
+          ((re-initalize) (for-effect (begin (set! v ((vector-generator (lambda (i) (bucket-maker))) size) ))))
+          (else (delegate (vector-ref v (hash-fn (2nd msg))) msg)))))))
+
 (exit)
