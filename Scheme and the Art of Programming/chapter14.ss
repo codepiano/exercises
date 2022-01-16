@@ -68,7 +68,43 @@
                             (set! var val) ...
                             expr1 expr2 ...) (lambda () val) ...)))))
     (writeln (mletrec ((a 1)
-                       (b (+ a 1)) )
+                       (b (+ a 1)))
                     (+ a b))))
+
+(display '--------14.4)
+(newline)
+
+(define and-proc 
+    (lambda (th-list)
+        (cond ((null? th-list) #f)
+              ((null? (cdr th-list)) ((car th-list)))
+              (else (let ((v ((car th-list))))
+                        (if v
+                            (and-proc (cdr th-list))
+                            #f))))))
+
+(let-syntax ((mand (syntax-rules ()
+                        ((mand e ...)
+                         (and-proc (list (lambda () e) ...))))))
+    (writeln (mand))
+    (writeln (mand #t))
+    (writeln (mand #f))
+    (writeln (mand #t #t #t))
+    (writeln (mand #t #t #f)))
+
+(display '--------14.5)
+(newline)
+
+(let-syntax ((mlet* (syntax-rules ()
+                        ((mlet* ((var1 val1)) expr1 expr2 ...)
+                         (let ((var1 val1))
+                            expr1 expr2 ...))
+                        ((mlet* ((var1 val1) (var2 val2) ...) expr1 expr2 ...)
+                         (let ((var1 val1))
+                            (mlet* ((var2 val2) ...) expr1 expr2 ...))))))
+    (writeln (mlet* ((a 1)
+                     (b (+ a 2))
+                     (c (* a b)))
+                     (+ a (- c b)))))
 
 (exit)
