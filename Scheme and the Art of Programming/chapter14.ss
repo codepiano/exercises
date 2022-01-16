@@ -12,7 +12,6 @@
 (display '--------14.1)
 (newline)
 
-
 (define make-lambda-expression
     (lambda (parameters body-expressions)
         (cons 'lambda (cons parameters body-expressions))))
@@ -47,5 +46,29 @@
                       ((lambda (var ...)
                           expr1 expr2 ...) val ...)))))
     (writeln (let-transformer '(mlet ((a 5) (b 2)) (* a b)))))
+
+(display '--------14.2)
+(newline)
+
+; let
+(let-syntax ((mletrec (syntax-rules ()
+                        ((mletrec ((var val) ...) expr1 expr2 ...)
+                         (let ((var "any") ...)
+                            (set! var val) ...
+                            expr1 expr2 ...)))))
+    (writeln (mletrec ((a 1)
+                       (b (+ a 1)) )
+                    (+ a b))))
+
+
+; no let
+(let-syntax ((mletrec (syntax-rules ()
+                        ((mletrec ((var val) ...) expr1 expr2 ...)
+                         ((lambda (var ...)
+                            (set! var val) ...
+                            expr1 expr2 ...) (lambda () val) ...)))))
+    (writeln (mletrec ((a 1)
+                       (b (+ a 1)) )
+                    (+ a b))))
 
 (exit)
