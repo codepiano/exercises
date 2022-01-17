@@ -153,5 +153,35 @@
                        (set! loop (sub1 loop)))
                 sum)))
 
+(display '--------14.11)
+(newline)
+
+(let-syntax ((repeat (syntax-rules ()
+                     ((repeat expr test)
+                      (letrec ((loop (lambda ()
+                                        (begin expr
+                                               (if test
+                                                   (loop))))))
+                            (loop))))))
+    (writeln (let ((loop 0))
+                (repeat (set! loop (sub1 loop))
+                        (positive? loop))
+                loop)))
+
+(define-syntax while (syntax-rules ()
+                     ((while test expr1 expr2 ...)
+                      (letrec ((loop (lambda ()
+                                        (if test
+                                            (begin expr1 expr2 ... (loop))))))
+                            (loop)))))
+
+(letrec-syntax ((repeat (syntax-rules ()
+                            ((repeat expr test)
+                             (begin expr
+                                    (while test expr))))))
+    (writeln (let ((loop 0))
+                (repeat (set! loop (sub1 loop))
+                        (positive? loop))
+                loop)))
 
 (exit)
