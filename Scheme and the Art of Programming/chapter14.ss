@@ -107,4 +107,35 @@
                      (c (* a b)))
                      (+ a (- c b)))))
 
+(display '--------14.8)
+(newline)
+
+(let-syntax ((mlet (syntax-rules ()
+                     ((mlet ((var val) ...) expr1 expr2 ...)
+                      ((lambda (var ...)
+                          expr1 expr2 ...) val ...))
+                     ((mlet name ((var val) ...) expr1 expr2 ...)
+                      ((letrec ((name (lambda (var ...)
+                                        expr1 expr2 ...))) name) val ...)))))
+    (writeln (mlet test ((a 1) (b 2)) (+ a b))))
+
+
+(display '--------14.9)
+(newline)
+
+(define thaw
+    (lambda (thunk)
+        (thunk)))
+
+(let-syntax ((cycle (syntax-rules ()
+                        ((cycle expr1 expr2 ...)
+                         ((lambda (th)
+                            (letrec ((loop (lambda (n)
+                                                (thaw th)
+                                                (if (> n 10)
+                                                    (writeln "force break cycle")
+                                                    (loop (+ n 1))))))
+                                (loop 0))) (lambda () expr1 expr2 ...))))))
+    (writeln (cycle (writeln 1))))
+
 (exit)
