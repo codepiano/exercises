@@ -138,4 +138,20 @@
                                 (loop 0))) (lambda () expr1 expr2 ...))))))
     (writeln (cycle (writeln 1))))
 
+(display '--------14.10)
+(newline)
+
+(let-syntax ((while (syntax-rules ()
+                     ((while test expr1 expr2 ...)
+                      (letrec ((loop (lambda ()
+                                        (if test
+                                            (begin expr1 expr2 ... (loop))))))
+                            (loop))))))
+    (writeln (let ((loop 100) (sum 0))
+                (while (positive? loop)
+                       (set! sum (+ sum loop))
+                       (set! loop (sub1 loop)))
+                sum)))
+
+
 (exit)
