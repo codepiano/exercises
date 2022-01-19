@@ -197,7 +197,6 @@
                                            (thaw body-thunk)
                                            (set! var (thaw step-thunk))))))))
                                         
-
 (define vector-sum 
     (lambda (v)
         (let ((n (vector-length v))
@@ -207,4 +206,81 @@
 
 (writeln (vector-sum '#(1 2 3 4)))
 
+(display '--------14.13)
+(newline)
+
+(define-syntax do (syntax-rules ()
+                    ((do ((var initial step) ...)
+                        (test exit1 exit2 ...)
+                        (expr1 expr2 ...))
+                     ((letrec ((loop (lambda (var ...)
+                                        (cond (test exit1 exit2 ...)
+                                              (else (begin expr1 expr2 ...)
+                                                    (loop step ...))))))
+                            loop) initial ...))))
+
+(define-syntax fordo (syntax-rules ()
+                        ((fordo var initial step test expr1 expr2 ...)
+                         (do ((var initial step))
+                            (test #t)
+                            (expr1 expr2 ...)))))
+
+(define vector-sum-fordo
+    (lambda (v)
+        (let ((n (vector-length v))
+              (sum 0))
+                (fordo i 0 (add1 i) (= i n) (set! sum (+ sum (vector-ref v i))))
+                sum)))
+
+(writeln (vector-sum-fordo '#(1 2 3 4)))
+
+(display '--------14.14)
+(newline)
+
+(define (begin0-proc first others)
+    (let ((result first)
+          (hole (others)))
+        result))
+
+(let-syntax ((begin0 (syntax-rules ()
+                     ((begin0 expr)
+                      expr)
+                     ((begin0 expr1 expr2 expr3 ...)
+                      (begin0-proc expr1 (lambda () expr2 expr3 ...))))))
+    (writeln (begin0 (writeln 1) (writeln 2) (writeln 3)))
+    (writeln (begin0 (writeln 1))))
+
+(display '--------14.16)
+(newline)
+
+(define member-trace
+    (lambda (item ls)
+        (if (null? ls)
+            (begin (writeln "no") #f)
+            (if (equal? (car ls) item)
+                (begin (writeln "yes") #t)
+                (begin (writeln "maybe")
+                       (member-trace item (cdr ls)))))))
+
+(define factorial
+    (lambda (n)
+        (if (zero? n)
+            (begin 1)
+            (begin (* n (factorial (sub1 n)))))))
+
+(display '--------14.17)
+(newline)
+
+(define-syntax mcond (syntax-rules ()
+                        ((cond (else e1 e2 ...))
+                         (begin e1 e2 ...))
+                        ((cond (test e1 e2 ...) clauses ...)
+                         (if test
+                             (begin e1 e2 ...)
+                             (cond clauses ...)))))
+
+(define x 1)
+(writeln (mcond ((> x 10) x)
+                ((= x 10) 100)
+                (else 0)))
 (exit)
