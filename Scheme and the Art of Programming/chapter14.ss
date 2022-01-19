@@ -184,4 +184,27 @@
                         (positive? loop))
                 loop)))
 
+(display '--------14.12)
+(newline)
+
+(define-syntax for (syntax-rules ()
+                            ((for var initial step test expr1 expr2 ...)
+                             (let ((var initial))
+                                (let ((step-thunk (lambda () step))
+                                      (test-thunk (lambda () test))
+                                      (body-thunk (lambda () expr1 expr2 ...)))
+                                    (while (not (thaw test-thunk))
+                                           (thaw body-thunk)
+                                           (set! var (thaw step-thunk))))))))
+                                        
+
+(define vector-sum 
+    (lambda (v)
+        (let ((n (vector-length v))
+              (sum 0))
+                (for i 0 (add1 i) (= i n) (set! sum (+ sum (vector-ref v i))))
+                sum)))
+
+(writeln (vector-sum '#(1 2 3 4)))
+
 (exit)
