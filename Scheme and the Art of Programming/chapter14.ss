@@ -272,9 +272,9 @@
 (newline)
 
 (define-syntax mcond (syntax-rules ()
-                        ((cond (else e1 e2 ...))
+                        ((mcond (else e1 e2 ...))
                          (begin e1 e2 ...))
-                        ((cond (test e1 e2 ...) clauses ...)
+                        ((mcond (test e1 e2 ...) clauses ...)
                          (if test
                              (begin e1 e2 ...)
                              (cond clauses ...)))))
@@ -283,4 +283,60 @@
 (writeln (mcond ((> x 10) x)
                 ((= x 10) 100)
                 (else 0)))
+
+(display '--------14.18)
+(newline)
+
+(define-syntax variable-case (syntax-rules ()
+     ((variable-case var (else e1 e2 ...)) 
+      (begin e1 e2 ...))
+     ((variable-case var (keys e1 e2 ...) clauses ...)
+      (if (memv var (quote keys))
+        (begin e1 e2 ...)
+        (variable-case var clauses ...)))))
+
+(let ((x (remainder 35 10)))
+    (variable-case x
+        ((2 4 6 8) (writeln "even") x)
+        ((13 5 7 9) (writeln "odd") x)
+        (else (writeln "zero") x)))
+
+(display '--------14.19)
+(newline)
+
+(define target #t)
+
+(define-syntax mcase (syntax-rules ()
+     ((mcase (else e1 e2 ...)) 
+      (begin e1 e2 ...))
+     
+     ((mcase e1
+        (keys e2 e3 ...) clauses ...)
+      (begin (set! target ((lambda () e1)))
+             (writeln 1)
+             (writeln target)
+             (writeln (quote keys))
+             (if (memv target (quote keys))
+                     (begin e2 e3 ...)
+                     (variable-case clauses ...))))
+     ((mcase (keys e1 e2 ...) clauses ...)
+     (begin (writeln 2)
+     (if (memv target (quote keys))
+              (begin e1 e2 ...)
+              (variable-case clauses ...)))) ))
+
+(mcase (remainder 35 10)
+    ((2 4 6 8) (writeln "even") target)
+    ((13 5 7 9) (writeln "odd") target)
+    (else (writeln "zero") target))
+
+(display '--------14.20)
+(newline)
+
+(define-syntax object-maker (syntax-rules ()
+    ((object-maker (e3 e4 ...) (keys e1 e2 ...) clauses ...)
+     (lambda msg (case (1st msg)
+                    ((keys e1 e2 ...) clauses ...)
+                    (else (e3 e4 ...)))))))
+
 (exit)
