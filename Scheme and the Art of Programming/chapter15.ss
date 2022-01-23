@@ -189,4 +189,61 @@
 
 (writeln (stream->list odd-multiples-of-3 20))
 
+(display '--------15.8)
+(newline)
+
+(define (stream-ref strm n)
+    (cond ((stream-null? strm) the-null-stream)
+          ((= n 0) (stream-car strm))
+          (else (stream-ref (stream-cdr strm) (- n 1)))))
+
+(define divides-by
+    (lambda (n)
+        (lambda (k)
+        (zero? (remainder k n)))))
+
+(define (stream-filter-out test?)
+    (letrec ((helper (lambda (strm)
+                        (let ((a (stream-car strm)))
+                            (if (test? a)
+                                (helper (stream-cdr strm))
+                                (stream-cons a (helper (stream-cdr strm))))))))
+        helper))
+
+(define sieve (compose stream-filter-out divides-by))
+
+(define positive-integers
+    (stream-cons 1 (stream-map add1 positive-integers)))
+
+(define prime-numbers
+    (letrec ((primes (lambda (s)
+                        (stream-cons (stream-car s)
+                            (primes ((sieve (stream-car s)) (stream-cdr s)))))))
+        (primes (stream-cdr positive-integers))))
+
+(define has-prime-divisor?
+    (lambda (n)
+        (let ((max-value (sqrt n)))
+            (letrec
+                ((try (lambda (primes)
+                    (and (<= (stream-car primes) max-value)
+                         (or (zero? (remainder n (stream-car primes)))
+                             (try (stream-cdr primes)))))))
+                (try odd-primes)))))
+
+(define odd-primes-builder
+    (lambda (n)
+        (if (has-prime-divisor? n)
+            (odd-primes-builder (+ n 2))
+            (stream-cons n (odd-primes-builder (+ n 2))))))
+
+(define odd-primes (stream-cons 3 (odd-primes-builder 5)))
+
+(define prime-numbers-another (stream-cons 2 odd-primes))
+
+; 15.26
+; (writeln (stream-ref prime-numbers 500))
+; 15.27 fast
+; (writeln (stream-ref prime-numbers-another 500))
+
 (exit)
