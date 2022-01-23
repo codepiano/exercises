@@ -92,4 +92,101 @@
 (writeln (delayed-list-product-acc 3 (list->delayed-list '(1 2 3 4 5))))
 (writeln (delayed-list-product-acc 10 (list->delayed-list '(1 2 3 4 5 0 6 7 8 9))))
 
+(display '--------15.5)
+(newline)
+
+(define stream-car car)
+
+(define stream-cdr (compose force cdr))
+
+(define the-end-of-stream-tag "end of stream")
+
+(define-syntax stream-cons (syntax-rules ()
+    ((stream-cons expr stream)
+     (cons expr (delay stream)))))
+
+(define the-null-stream
+    (stream-cons the-end-of-stream-tag the-null-stream))
+
+(define list->stream
+    (lambda (ls)
+        (if (null? ls)
+            the-null-stream
+            (stream-cons (car ls) (list->stream (cdr ls))))))
+
+(define end-of-stream?
+    (lambda (x)
+        (eq? x the-end-of-stream-tag)))
+
+(define stream-null? (compose end-of-stream? stream-car))
+
+(define stream->list
+    (lambda (strm n)
+        (if (or (zero? n) (stream-null? strm))
+            '()
+            (cons (stream-car strm) (stream->list (stream-cdr strm) (sub1 n))))))
+
+(define finite-stream->list 
+    (lambda (finite-strm)
+        (stream->list finite-strm -1)))
+
+(define build-stream
+    (lambda (seed proc)
+        (letrec
+            ((stream-builder
+                (lambda (x)
+                    (stream-cons x (stream-builder (proc x))))))
+            (stream-builder seed))))
+
+
+(define stream-map
+    (lambda (proc strm)
+        (if (stream-null? strm)
+            the-null-stream
+            (stream-cons
+                (proc (stream-car strm))
+                (stream-map proc (stream-cdr strm))))))
+
+(define (integers-from m)
+    (build-stream m add1))
+
+(writeln (stream->list (integers-from 6) 20))
+
+(define (multiples-of k)
+    (stream-map (lambda (n) (* n k)) (integers-from 0)))
+
+(writeln (stream->list (multiples-of 6) 20))
+
+(define (squares-of-integers)
+    (stream-map (lambda (n) (* n n)) (integers-from 0)))
+
+(writeln (stream->list (squares-of-integers) 20))
+
+(display '--------15.6)
+(newline)
+
+(define all-integers 
+    (let ((r (lambda (n)
+                    (cond ((> n 0) (- 0 n))
+                          ((<= n 0) (+ (- 0 n) 1))))))
+        (build-stream 0 r)))
+
+(writeln (stream->list all-integers 20))
+
+(display '--------15.7)
+(newline)
+
+(define (stream-filter-in test?)
+    (letrec ((helper (lambda (strm)
+                        (let ((a (stream-car strm)))
+                            (if (test? a)
+                                (stream-cons a (helper (stream-cdr strm)))
+                                (helper (stream-cdr strm)))))))
+        helper))
+
+(define odd-multiples-of-3
+    ((stream-filter-in (lambda (x) (= 0 (remainder x 3)))) (integers-from 1)))
+
+(writeln (stream->list odd-multiples-of-3 20))
+
 (exit)
