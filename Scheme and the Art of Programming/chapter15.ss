@@ -322,4 +322,39 @@
 
 (writeln (stream->list int-pairs 20))
 
+(display '--------15.16)
+(newline)
+
+(define (string->list s)
+    (letrec ((r (lambda (s n l)
+                    (if (< n 0)
+                        l
+                        (r s (- n 1) (cons (string-ref s n) l))))))
+        (r s (- (string-length s) 1) '())))
+
+(writeln (string->list "abcdefg"))
+
+(display '--------15.17)
+(newline)
+
+(define list->string
+    (lambda (list-of-characters)
+        (let ((len (length list-of-characters)))
+            (let ((result-string (make-string len)))
+                (letrec ((r (lambda (n)
+                                (if (< n 0)
+                                    result-string
+                                    (begin (string-set! result-string n (list-ref list-of-characters n))
+                                           (r (- n 1)))))))
+                    (r (- len 1)))))))
+
+(define string-tester
+    (lambda (strng)
+        (let ((chars (string->list strng)))
+            (let ((s (list->string chars)))
+                (write (list s chars))
+                (newline))))) 
+
+(for-each string-tester '("abc" " " "uv xyz" ""))
+
 (exit)
