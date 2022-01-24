@@ -138,7 +138,6 @@
                     (stream-cons x (stream-builder (proc x))))))
             (stream-builder seed))))
 
-
 (define stream-map
     (lambda (proc strm)
         (if (stream-null? strm)
@@ -245,5 +244,82 @@
 ; (writeln (stream-ref prime-numbers 500))
 ; 15.27 fast
 ; (writeln (stream-ref prime-numbers-another 500))
+
+(display '--------15.9)
+(newline)
+
+(define (stream-member? a strm n)
+    (cond ((= n 0) #f)
+           ((stream-null? strm) #f)
+           ((= a (stream-car strm)) #t)
+           (else (stream-member? a (stream-cdr strm) (- n 1)))))
+
+(writeln (stream-member? 10 prime-numbers 20))
+(writeln (stream-member? 19 prime-numbers 20))
+(writeln (stream-member? 19 prime-numbers 5))
+
+(display '--------15.10)
+(newline)
+
+(define (prime? a)
+    (cond ((or (= a 2) (= a 3)) #t)
+          ((has-prime-divisor? a) #f)
+          (else (not (= 0 (remainder a 2))))))
+
+(writeln (prime? 37))
+(writeln (prime? 35))
+(writeln (prime? 51))
+(writeln (prime? 100000007))
+
+(display '--------15.13)
+(newline)
+
+(define (diagonal i)
+    (letrec
+        ((stream-builder
+            (lambda (x)
+                (cond ((= (car x) 0) the-null-stream)
+                      (else (stream-cons x (stream-builder (list (- (car x) 1) (+ (cadr x) 1)))))))))
+        (stream-builder (list i 1))))
+
+(writeln (finite-stream->list (diagonal 4)))
+(writeln (finite-stream->list (diagonal 5)))
+
+(display '--------15.14)
+(newline)
+
+(define stream-append-incorrect
+    (lambda (finite-stream stream)
+        (cond
+            ((stream-null? finite-stream) stream)
+             (else (stream-cons (stream-car finite-stream)
+                        (stream-append-incorrect (stream-cdr finite-stream) stream))))))
+
+(define int-pairs-generator-incorrect (lambda (i)
+    (stream-append-incorrect (diagonal i) (int-pairs-generator (add1 i)))))
+
+; recursion forever
+; (writeln (int-pairs-generator-incorrect 1))
+
+(display '--------15.15)
+(newline)
+
+(define stream-append/delay
+    (lambda (finite-stream stream)
+        (cond
+            ((stream-null? finite-stream) (force stream))
+             (else (stream-cons (stream-car finite-stream)
+                        (stream-append/delay (stream-cdr finite-stream) stream))))))
+
+(define-syntax stream-append (syntax-rules ()
+    ((stream-append finite-stream stream)
+     (stream-append/delay finite-stream (delay stream)))))
+
+(define int-pairs-generator (lambda (i)
+    (stream-append (diagonal i) (int-pairs-generator (add1 i)))))
+
+(define int-pairs (int-pairs-generator 1))
+
+(writeln (stream->list int-pairs 20))
 
 (exit)
