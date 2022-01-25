@@ -325,14 +325,14 @@
 (display '--------15.16)
 (newline)
 
-(define (string->list s)
+(define (string->list1 s)
     (letrec ((r (lambda (s n l)
                     (if (< n 0)
                         l
                         (r s (- n 1) (cons (string-ref s n) l))))))
         (r s (- (string-length s) 1) '())))
 
-(writeln (string->list "abcdefg"))
+(writeln (string->list1 "abcdefg"))
 
 (display '--------15.17)
 (newline)
@@ -350,11 +350,59 @@
 
 (define string-tester
     (lambda (strng)
-        (let ((chars (string->list strng)))
+        (let ((chars (string->list1 strng)))
             (let ((s (list->string chars)))
                 (write (list s chars))
                 (newline))))) 
 
 (for-each string-tester '("abc" " " "uv xyz" ""))
+
+(display '--------15.18)
+(newline)
+
+(define (string1 . args)
+    (list->string args))
+
+(writeln (string1 #\a #\b #\c))
+(writeln (string1 #\a #\b #\c #\1 #\2 #\3))
+
+(display '--------15.19)
+(newline)
+
+(define (string-append s1 s2)
+    (list->string (append (string->list1 s1) (string->list1 s2))))
+
+(writeln (string-append "abc" "123"))
+
+(display '--------15.20)
+(newline)
+
+(define (lower s)
+    (list->string (map char-downcase (string->list1 s))))
+
+(writeln (lower "ABCDEFG123zzzz"))
+
+(display '--------15.22)
+(newline)
+
+(define (flipflop s)
+    (list->string (map (lambda (c)
+                            (if (char-upper-case? c)
+                                (char-downcase c)
+                                (if (char-lower-case? c)
+                                    (char-upcase c)
+                                    c))) (string->list1 s))))
+
+(writeln (flipflop "AbCdEf"))
+
+(display '--------15.23)
+(newline)
+
+(define (has-function n)
+    (lambda (s)
+        (modulo (apply + (map char->integer (string->list1 s))) n)))
+
+(writeln ((has-function 26) "Hello"))
+(writeln ((has-function 26) "hello"))
 
 (exit)
