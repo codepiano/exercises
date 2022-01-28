@@ -67,7 +67,7 @@
             (+ (* (+ (call/cc r) 3) 8)
                (* (+ (call/cc r) 3) 8))))
 
-(display '--------16.15)
+(display '--------16.16)
 (newline)
 
 (define deep "any continuation")
@@ -89,5 +89,40 @@
 (writeln (cons 2000 (deep '(a b c))))
 (writeln (cons 1000 (map-sub1 '(5 4 3 2 1 0))))
 (writeln (cons 2000 (deep '(a b c))))
+
+(display '--------16.17)
+(newline)
+
+(define *escape/thunk* "any continuation")
+
+(define receiver-4
+    (lambda (continuation)
+        (set! *escape/thunk* continuation)
+        (*escape/thunk* (lambda () (writeln "escaper is defined")))))
+
+((call/cc receiver-4))
+(*escape/thunk* (lambda () (writeln (add1 6))))
+
+(define escaper
+    (lambda (proc)
+        (lambda args
+            (*escape/thunk*
+                (lambda ()
+                    (apply proc args))))))
+
+(define et (escaper (lambda (x) (x))))
+
+(et (lambda () (writeln (add1 6))))
+
+(display '--------16.19)
+(newline)
+
+(define reset "reset")
+
+((call/cc (lambda (c)
+            (set! reset (lambda () (c (lambda () (writeln "reset invoked")))))
+            (c (lambda () ())))))
+
+(cons 1 (reset))
 
 (exit)
