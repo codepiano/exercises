@@ -125,4 +125,17 @@
 
 (cons 1 (reset))
 
+(display '--------16.21)
+(newline)
+
+(writeln (let ((r (escaper
+                    (lambda (proc)
+                        (cons 'c (proc (cons 'd '())))))))
+    (cons 'a (cons 'b (call/cc r)))))
+
+(writeln (let ((r (escaper
+                    (lambda (proc)
+                        (cons 'c (cons 'd '()))))))
+    (cons 'a (cons 'b (call/cc r)))))
+
 (exit)
