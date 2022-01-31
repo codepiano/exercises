@@ -35,3 +35,81 @@
 
 ; forever
 ; (cycle-proc (lambda () (writeln 1)))
+
+(display '--------17.2)
+(newline)
+
+(define receiver
+    (lambda (continuation)
+        (continuation continuation)))
+
+(define tester
+    (lambda (continuation)
+        (writeln "beginning")
+        (call/cc continuation)
+        (writeln "middle")
+        (call/cc continuation)
+        (writeln "end")))
+
+(tester (call/cc receiver))
+
+#| 输出:
+> beginning
+
+先执行 (call/cc receiver)， 构造的 continuation 是 <ep>:  (escaper (lambda (x) (tester x)))，等价于 (escaper tester)
+(call/cc receiver) 等价于 (receiver <ep>)，等于 (<ep> <ep>) ，等于 (tester <ep>)，第一次调用 tester，此时参数 continuation 的值是 <ep>
+执行 tester 中的 (writeln "beginning") 输出 beginning，
+
+> beginning
+
+执行 tester[(call/cc receiver) 中调用] 中的第二行： (call/cc continuation)，此时 continuation 是 <ep>，(call/cc <ep>) 构造的 continuation 是 <epa>， 如下：
+(escaper
+    (lambda (x)
+        x
+        (writeln "middle")
+        (call/cc <ep>)
+        (writeln "end")))
+
+(call/cc <ep>) 等价于 (<ep> <epa>)，等价于 ((escaper tester) <epa>)，第二次调用 tester，此时 continuation 的值是 <epa>
+执行 tester 中的 (writeln "beginning") 输出 beginning，
+
+; middle
+
+执行 tester[<ep>中调用] 的第二行： (call/cc continuation)，此时 continuation 是 <epa>，(call/cc <epa>) 构造的 continuation 是 <epb>，如下：
+
+(escaper
+    (lambda (x)
+        x
+        (writeln "middle")
+        (call/cc <epa>)
+        (writeln "end")))
+
+(call/cc <epa>) 等价于 (<epa> <epb>)，<epa> 没有对传入的参数 <ebp> 执行动作，然后执行 (writeln "middle") 输出 "middle"
+
+; beginning
+
+执行 tester(<epa>) 的第四行 (call/cc <ep>)，构造的 continuation 是 <epc>，如下：
+
+(escaper
+    (lambda (x)
+        x
+        (writeln "end")))
+
+(call/cc <ep>) 等价于 (<ep> <epc>)，等价于 ((escaper tester) <epc>)，第三次调用 tester，此时 continuation 的值是 <epc>
+执行 tester 中的 (writeln "beginning") 输出 "beginning"
+
+; end
+
+执行 tester[<ep>中调用] 的第二行，(call/cc contiuation)，此时 continuation 的值是 <epc>，(call/cc <epc>)构造的 continuation 是 <epd>，即：
+
+(escaper
+    (lambda (x)
+        x
+        (writeln "middle")
+        (call/cc <epc>)
+        (writeln "end")))
+
+(call/cc <epc>) 等价于 (<epc> <epc>)，等价于 (escaper (writeln "end"))，输出 "end"
+|#
+
+(exit)
