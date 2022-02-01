@@ -112,4 +112,104 @@
 (call/cc <epc>) 等价于 (<epc> <epc>)，等价于 (escaper (writeln "end"))，输出 "end"
 |#
 
+(display "--------Escaping from and Returning to Deep Recursions")
+(newline)
+
+(define *escape/thunk* "any continuation")
+
+(define receiver-4
+    (lambda (continuation)
+        (set! *escape/thunk* continuation)
+        (*escape/thunk* (lambda () (writeln "escaper is defined")))))
+
+((call/cc receiver-4))
+
+(define escaper
+    (lambda (proc)
+        (lambda args
+            (*escape/thunk*
+                (lambda ()
+                    (apply proc args))))))
+
+(define break1
+    (lambda (x)
+        (let ((break-receiver
+                (lambda (continuation)
+                        (continuation x))))
+            (call/cc break-receiver))))
+
+
+(define get-back "any procedure")
+
+(define break2
+    (lambda (x)
+        (let ((break-receiver (lambda (continuation)
+                                (set! get-back (lambda () (continuation x)))
+                                (any-action x))))
+            (call/cc break-receiver))))
+
+(define any-action
+    (lambda (x)
+        ((escaper (lambda () x)))
+        (get-back)))
+
+(define break
+    (lambda (x)
+        (let ((break-receiver (lambda (continuation)
+                                (set! get-back (lambda () (continuation x)))
+                                (any-action x))))
+            (call/cc break-receiver))))
+
+(define flatten-number-list
+    (lambda (s)
+        (cond
+            ((null? s) '())
+            ((number? s) (list (break s)))
+            (else
+                (let ((flatcar (flatten-number-list (car s))))
+                    (append flatcar (flatten-number-list (cdr s))))))))
+
+; execute in scheme interpreter
+
+(flatten-number-list '((1 2 3) ((4 5)) (6)))
+
+(display '--------17.6)
+(newline)
+
+(define get-back "any escape procedure")
+
+(define break-argument "any value")
+
+(define zero-number 0)
+
+(define break-on-zero
+    (lambda ()
+        (let ((break-receiver
+                (lambda (continuation)
+                    (if (> zero-number 3)
+                        (begin 
+                            (set! zero-number 0)
+                            ((escaper (lambda () (writeln "error: too many zeros")))))
+                        (begin 
+                            (writeln 0)
+                            (set! zero-number (add1 zero-number))
+                            (set! get-back (lambda (x) (continuation x)))
+                            ((escaper (lambda () 1))))))))
+            (call/cc break-receiver))))
+
+(define product+
+    (lambda (n ls)
+        (letrec ((product
+            (lambda (ls)
+                (cond
+                    ((null? ls) 1)
+                    ((number? (car ls))
+                        (* (if (zero? (car ls))
+                                (break-on-zero)
+                                (car ls))
+                           (product (cdr ls))))
+                        (else (* (product (car ls))
+                                 (product (cdr ls))))))))
+            (+ n (product ls)))))
+
 (exit)
