@@ -212,4 +212,123 @@
                                  (product (cdr ls))))))))
             (+ n (product ls)))))
 
+(display '--------17.7)
+(newline)
+
+(define-syntax break-var (syntax-rules ()
+    ((break-var var)
+     (break (list (lambda () var) (lambda (v) (set! var v)))))))
+
+(display '--------17.10)
+(newline)
+
+(define coroutine-maker
+    (lambda (proc)
+        (let ((saved-continuation "any continuation"))
+            (let ((first-time #t))
+                (lambda (value)
+                    (if first-time
+                        (begin
+                            (set! first-time #f)
+                            (proc (resume-maker (lambda (v)
+                                            (set! saved-continuation v))) value))
+                        (saved-continuation value) ))))))
+
+(display '--------17.11)
+(newline)
+
+(define first-time #t)
+
+(define coroutine-maker
+    (lambda (proc)
+        (let ((saved-continuation "any continuation"))
+            (lambda (value)
+                (if first-time
+                    (begin
+                        (set! first-time #f)
+                        (proc (resume-maker (lambda (v)
+                                        (set! saved-continuation v))) value))
+                    (saved-continuation value) )))))
+
+(display '--------17.13)
+(newline)
+
+(define-syntax wrap (syntax-rules ()
+    ((wrap proc)
+     (lambda args (apply proc args)))))
+
+(define args 5)
+
+(writeln ((wrap (lambda (x y) (+ x y))) 4 6))
+(writeln ((wrap (lambda (x y) (let ((args (+ x 1)))
+                                    (+ args y)))) 4 6))
+(writeln ((wrap (lambda (x y) (+ x y args))) 4 6))
+
+(display '--------17.14)
+(newline)
+
+(define-syntax wrapOne (syntax-rules ()
+    ((wrapOne proc)
+     (lambda (arg) (proc arg)))))
+
+(writeln ((wrapOne (lambda (x) (+ x 6))) 4))
+
+(display '--------17.15)
+(newline)
+
+(define resume-maker
+    (lambda (update-proc!)
+        (lambda (next-coroutine value)
+            (let ((receiver (lambda (continuation)
+                                (update-proc! continuation)
+                                (next-coroutine value))))
+                (call/cc receiver)))))
+
+(define reader
+    (lambda (right)
+        (let ((co-proc (lambda (resume v)
+            (cycle-proc
+                (lambda ()
+                    (resume right (prompt-read "in> ")))))))
+            (coroutine-maker co-proc))))
+
+(define writer
+    (lambda (left escape-on-end)
+        (let ((co-proc (lambda (resume v)
+                        (cycle-proc
+                            (lambda ()
+                                (let ((symbol (resume left 'ok)))
+                                    (if (eq? symbol 'end)
+                                        (escape-on-end 'end)
+                                        (writeln "out> " symbol))))))))
+            (coroutine-maker co-proc))))
+
+(define x->y
+    (lambda (x y left right)
+        (let ((co-proc (lambda (resume v)
+            (cycle-proc
+                (lambda ()
+                    (let ((symbol-1 (resume left 'ok)))
+                        (if (eq? symbol-1 x)
+                            (let ((symbol-2 (resume left 'more)))
+                                (if (eq? symbol-2 x)
+                                    (resume right y)
+                                    (begin
+                                        (resume right symbol-1)
+                                        (resume right symbol-2))))
+                            (resume right symbol-1))))))))
+            (coroutine-maker co-proc))))
+
+(define grune
+    (lambda ()
+        (let ((grune-receiver
+            (lambda (escape-grune)
+                (letrec
+                    ((Input (reader (wrapOne A)))
+                     (A (x->y 'a 'b (wrapOne Input) (wrapOne B)))
+                     (B (x->y 'b 'c (wrapOne A) (wrapOne Output)))
+                     (Output (writer (wrapOne B) escape-grune)))
+                     (Output 'ok)))))
+            (call/cc grune-receiver))))
+
 (exit)
