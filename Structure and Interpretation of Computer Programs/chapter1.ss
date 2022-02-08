@@ -87,4 +87,35 @@
 
 (writeln (cube-iter 1.0 5))
 
+(display '--------1.11)
+(newline)
+
+(define (f n)
+  (cond ((< n 3) n)
+        (else (+ (f (- n 1)) (* 2 (f (- n 2))) (* 3 (f (- n 3)))))))
+
+(writeln (f 10))
+
+(define (f-iter n a b c)
+    (if (= 0 n)
+        a
+        (f-iter (- n 1) (+ a (* 2 b) (* 3 c)) a b)))
+
+(writeln (f-iter 8 2 1 0))
+
+(display '--------1.12)
+(newline)
+
+(define (yang a)
+    (cond ((null? a) '())
+          ((null? (cdr a)) '(1))
+          (else (cons (+ (car a) (cadr a)) (yang (cdr a))))))
+
+(define (pascal n a)
+    (if (= n 0)
+        a
+        (cons a (pascal (- n 1) (cons 1 (yang a))))))
+
+(writeln (pascal 4 '(1)))
+
 (exit)
