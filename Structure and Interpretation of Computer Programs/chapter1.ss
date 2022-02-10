@@ -192,4 +192,155 @@
 (writeln (fibr 7))
 (writeln (fib 7))
 
+(display '--------1.21)
+(newline)
+
+(define (smallest-divisor n) (find-divisor n 2))
+
+(define (find-divisor n test-divisor) 
+    (cond ((> (square test-divisor) n) n)
+           ((divides? test-divisor n) test-divisor)
+           (else (find-divisor n (+ test-divisor 1)))))
+           
+(define (divides? a b) (= (remainder b a) 0))
+
+(writeln (smallest-divisor 199))
+(writeln (smallest-divisor 1999))
+(writeln (smallest-divisor 19999))
+
+(display '--------1.22)
+(newline)
+
+(define (prime? n)
+    (= n (smallest-divisor n)))
+
+(define (timed-prime-test n)
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+
+(define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (runtime) start-time))))
+        
+(define (report-prime elapsed-time)
+    (display " *** ")
+    (display elapsed-time))
+
+(define (search-for-primes n count)
+    (cond ((= count 0) n)
+          ((prime? n) (begin
+                        (timed-prime-test n)
+                        (search-for-primes (+ n 2) (- count 1))))
+          (else (search-for-primes (+ n 2) count ))))
+
+(search-for-primes (+ 1000 1) 3)
+(search-for-primes (+ 10000 1) 3)
+(search-for-primes (+ 100000 1) 3)
+(search-for-primes (+ 1000000 1) 3)
+(newline)
+
+
+(display '--------1.23)
+(newline)
+
+(define (new-smallest-divisor n) (new-find-divisor n 2))
+
+(define (next n)
+    (if (= n 3)
+        2
+        (+ n 2)))
+
+(define (new-find-divisor n test-divisor) 
+    (cond ((> (square test-divisor) n) n)
+           ((divides? test-divisor n) test-divisor)
+           (else (new-find-divisor n (next test-divisor)))))
+
+(define (new-prime? n)
+    (= n (new-smallest-divisor n)))
+
+(define (new-timed-prime-test n)
+    (newline)
+    (display n)
+    (new-start-prime-test n (runtime)))
+
+(define (new-start-prime-test n start-time)
+    (if (new-prime? n)
+        (report-prime (- (runtime) start-time))))
+
+(define (new-prime? n)
+    (= n (new-smallest-divisor n)))
+
+(new-timed-prime-test 1009)
+(new-timed-prime-test 1013)
+(new-timed-prime-test 1019)
+(new-timed-prime-test 10007)
+(new-timed-prime-test 10009)
+(new-timed-prime-test 10037)
+(new-timed-prime-test 100003)
+(new-timed-prime-test 100019)
+(new-timed-prime-test 100043)
+(new-timed-prime-test 1000003)
+(new-timed-prime-test 1000033)
+(new-timed-prime-test 1000037)
+(newline)
+
+(display '--------1.25)
+(newline)
+
+(writeln "原始的 expmod 只需要进行多步的比较小的数值的计算，避免了计算 base 的 exp 次方，这个数值可能很大") 
+
+(display '--------1.26)
+(newline)
+
+(writeln "* 的参数计算了两遍，函数的参数会先求值，然后再调用函数") 
+
+(display '--------1.27)
+(newline)
+
+(define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp) (remainder (square (expmod base (/ exp 2) m)) m)) 
+    (else (remainder (* base (expmod base (- exp 1) m)) m))))
+
+(define (carmichael n a)
+    (cond ((= a n) #t)
+          ((not (= (expmod a n n) a)) #f)
+          (else (carmichael n (+ a 1)))))
+
+(writeln (carmichael 561 1))
+(writeln (carmichael 1105 1))
+(writeln (carmichael 1729 1))
+(writeln (carmichael 562 1))
+(writeln (carmichael 100 1))
+(writeln (carmichael 19 1))
+
+(display '--------1.28)
+(newline)
+
+(define (check x m)
+    (if (and (not (= x 1)) (not (= x (- m 1))) (= 1 (remainder (square x) m)))
+        0
+        (remainder (square x) m)))
+
+(define (mr-expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp) (check (mr-expmod base (/ exp 2) m) m))
+    (else (remainder (* base (mr-expmod base (- exp 1) m)) m))))
+
+(define (mr-test n)
+    (define (try-it a)
+        (= 1 (mr-expmod a (- n 1) n)))
+    (try-it (+ 1 (random (- n 1)))))
+
+(define (fast-prime? n times)
+    (cond ((= times 0) true)
+        ((mr-test n) (fast-prime? n (- times 1)))
+        (else false)))
+
+(writeln (fast-prime? 561 100))
+(writeln (fast-prime? 19 100))
+(writeln (fast-prime? 2 10))
+(writeln (fast-prime? 1105 100))
+
 (exit)
