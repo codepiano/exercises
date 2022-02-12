@@ -559,5 +559,104 @@
 
 (writeln (tan-cf 20 10))
 
+(display '--------1.40)
+(newline)
+
+(define dx 0.00001)
+
+(define (deriv g)
+    (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
+
+(define (newton-transform g)
+    (lambda (x) (- x (/ (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess) (fixed-point (newton-transform g) guess))
+
+(define (cubic a b c)
+    (lambda (x) (+ (* x x x) (* a x x) (* b x) c)))
+
+(writeln (newtons-method (cubic 1 2 3) 1))
+
+(display '--------1.41)
+(newline)
+
+(define (double f)
+    (lambda (x) (f (f x))))
+
+(define (inc x) (+ x 1))
+
+(writeln (((double (double double)) inc) 5)) ; 21   5+16
+
+(display '--------1.42)
+(newline)
+
+(define (compose f g)
+    (lambda (x) (f (g x))))
+
+(writeln ((compose square inc) 6))
+
+(display '--------1.43)
+(newline)
+
+(define (repeated f n)
+    (define (iter c)
+        (if (= c 0)
+            identity
+            (compose f (iter (- c 1)))))
+    (lambda (x) ((iter n) x)))
+
+(writeln ((repeated square 2) 5))
+
+(display '--------1.44)
+(newline)
+
+(define (smooth f)
+    (lambda (x)
+        (/ (+ (f x) (f (+ x dx)) (f (- x dx))) 3)))
+
+(define (n-fold-smooth f n) (repeated (smooth f) n))
+
+(writeln ((n-fold-smooth square 3) 10))
+
+(display '--------1.44)
+(newline)
+
+(define (average-damp f)
+    (lambda (x) (average x (f x))))
+
+(define (get-max-pow n) 
+   (define (iter p r) 
+     (if (< (- n r) 0) 
+         (- p 1) 
+         (iter (+ p 1) (* r 2)))) 
+   (iter 1 2)) 
+
+(define (nth-root x n)
+    (fixed-point ((repeated average-damp (get-max-pow n)) (lambda (y) (/ x (expt y (- n 1))))) 0.1))
+
+(writeln (nth-root 3 4))
+
+(writeln (nth-root 8 5))
+
+(display '--------1.46)
+(newline)
+
+(define (iterative-improve good? improve)
+    (define (iter x)
+        (if (good? x (improve x))
+            (improve x)
+            (iter (improve x))))
+    (lambda (y) (iter y)))
+
+(define (sqrt-ii x) ((iterative-improve (lambda (y next) (good-enough? next x)) (lambda (y) (average y (/ x y)))) 0.1))
+
+(writeln (sqrt-ii 2))
+
+(define (fixed-point-ii f first-guess)
+    (define (close-enough? v1 v2)
+        (< (abs (- v1 v2)) tolerance))
+    ((iterative-improve close-enough? f) first-guess))
+
+(writeln (fixed-point-ii (lambda (x) (+ 1 (/ 1 x))) 1))
 
 (exit)
