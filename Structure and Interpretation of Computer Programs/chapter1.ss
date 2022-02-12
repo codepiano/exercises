@@ -1,5 +1,13 @@
 (define writeln (lambda x (for-each display x) (newline)))
 
+(define (sub1 n)
+    (- n 1))
+
+(define (add1 n)
+    (+ n 1))
+
+(define identity (lambda (x) x))
+
 (display '--------1.2)
 (newline)
 
@@ -342,5 +350,214 @@
 (writeln (fast-prime? 19 100))
 (writeln (fast-prime? 2 10))
 (writeln (fast-prime? 1105 100))
+
+(display '--------1.29)
+(newline)
+
+(define (cube n) (* n n n))
+
+(define (sum term a next b)
+    (if (> a b)
+        0
+        (+ (term a)
+                (sum term (next a) next b))))
+
+(define (Simpson f a b n)
+    (define (re h)
+        (* (/ h 3) (sum (lambda (k)
+                        (* (cond ((or (= k 0) (= k 1)) 1)
+                                 ((odd? k) 4)
+                                 (else 2))
+                            (f (+ a (* h k))))) a add1 n)))
+    (re (/ (- b a) n)))
+    
+(writeln (Simpson cube 0 1 100))
+(writeln (Simpson cube 0 1 1000))
+
+(display '--------1.30)
+(newline)
+
+(define (sum-iter term a next b)
+    (define (iter a result)
+        (if (> a b)
+            result
+            (iter (next a) (+ (term a) result))))
+    (iter a 0))
+
+(writeln (sum-iter + 0 add1 100))
+
+(display '--------1.31.a)
+(newline)
+
+(define (product term a next b)
+    (define (iter a result)
+        (if (> a b)
+            result
+            (iter (next a) (* (term a) result))))
+    (iter a 1))
+
+(define (factorial n) (product identity  1 add1 n))
+
+(writeln (factorial 5))
+
+(define (pi n) (* 4 (product (lambda (x) (if (odd? x)
+                                             (/ (- x 1) x)
+                                             (/ x (- x 1)))) 3 add1 n)))
+
+(writeln (pi 10))
+(writeln (pi 50))
+
+(display '--------1.31.b)
+(newline)
+
+(define (product-recur term a next b)
+    (if (> a b)
+        1
+        (* (term a)
+                (product-recur term (next a) next b))))
+
+(define (factorial-recur n) (product-recur identity  1 add1 n))
+
+(writeln (factorial-recur 5))
+
+(display '--------1.32.a)
+(newline)
+
+(define (accumulate combiner null-value term a next b)
+    (define (iter a result)
+        (if (> a b)
+            result
+            (iter (next a) (combiner (term a) result))))
+    (iter a null-value))
+
+(writeln (accumulate + 0 identity 1 add1 100))
+
+(display '--------1.32.b)
+(newline)
+
+(define (accumulate-recur combiner null-value term a next b)
+    (if (> a b)
+        null-value 
+        (combiner (term a)
+                (accumulate-recur combiner null-value term (next a) next b))))
+
+(writeln (accumulate-recur + 0 identity 1 add1 100))
+
+(display '--------1.33.a)
+(newline)
+
+(define (filtered-accumulate combiner filter null-value term a next b)
+    (define (iter a result)
+        (if (> a b)
+            result
+            (iter (next a) (combiner ((lambda (x)
+                                        (if (filter x)
+                                            x
+                                            null-value)) (term a)) result))))
+    (iter a null-value))
+
+(writeln (filtered-accumulate + prime? 0 identity 2 add1 10))
+
+(display '--------1.33.b)
+(newline)
+
+(define (gcd a b) (if (= b 0)
+      a
+      (gcd b (remainder a b))))
+
+(writeln (filtered-accumulate * (lambda (x) (= 1 (gcd x 10))) 1 identity 1 add1 10))
+
+(display '--------1.35)
+(newline)
+
+(define tolerance 0.00001)
+
+(define (fixed-point f first-guess)
+    (define (close-enough? v1 v2)
+        (< (abs (- v1 v2)) tolerance))
+    (define (try guess)
+        (let ((next (f guess)))
+            (if (close-enough? guess next)
+                next
+                (try next))))
+    (try first-guess))
+
+(writeln (fixed-point (lambda (x) (+ 1 (/ 1 x))) 1))
+
+(display '--------1.36)
+(newline)
+
+(define (fixed-point-seq f first-guess)
+    (define (close-enough? v1 v2)
+        (< (abs (- v1 v2)) tolerance))
+    (define (try guess)
+        (let ((next (f guess)))
+            (writeln next)
+            (if (close-enough? guess next)
+                next
+                (try next))))
+    (try first-guess))
+
+(writeln (fixed-point-seq (lambda (x) (/ (log 1000) (log x))) 2))
+
+(display '--------1.37.a)
+(newline)
+
+(define (cont-frac n d k)
+    (if (= k 0)
+        0
+        (/ (n k) (+ (d k) (cont-frac n d (- k 1))))))
+
+(writeln (cont-frac (lambda (i) 1.0)
+                    (lambda (i) 1.0)
+                    20))
+
+(display '--------1.37.b)
+(newline)
+
+(define (cont-frac-iter n d k)
+    (define (iter r c)
+        (if (= c 0)
+            r
+            (iter (/ (n c) (+ r (d c))) (- c 1))))
+    (iter 0 k))
+
+(writeln (cont-frac-iter (lambda (i) 1.0)
+                         (lambda (i) 1.0)
+                         20))
+
+(display '--------1.38)
+(newline)
+
+(define (euler-d i)
+    (if (= (remainder i 3) 2)
+        (* 2 (+ 1 (quotient i 3)))
+        1))
+
+(define (euler-d-test n i)
+    (if (= i n)
+        '()
+        (cons (euler-d i) (euler-d-test n (+ i 1)))))
+
+(writeln (euler-d-test 20 1))
+
+(define (euler n) (+ 2 (cont-frac-iter (lambda (i) 1.0)
+                                       euler-d
+                                       n)))
+
+(writeln (euler 20))
+
+(display '--------1.39)
+(newline)
+
+(define (tan-cf x k)
+    (define (iter r c)
+        (if (= c 0)
+            r
+            (iter (/ (square x) (- (* 2 c) 1 r)) (- c 1))))
+    (/ x (iter 0 k)))
+
+(writeln (tan-cf 20 10))
+
 
 (exit)
