@@ -86,4 +86,83 @@
 
 (writeln (area r1))
 
+(display '--------2.4)
+(newline)
+
+(define (mycons x y) (lambda (m) (m x y)))
+
+(define (mycar z) (z (lambda (p q) p)))
+
+(define (mycdr z) (z (lambda (p q) q)))
+
+(display '--------2.5)
+(newline)
+
+(define (ncons a b)
+    (* (expt 2 a) (expt 3 b)))
+
+(define (divide-until x y)
+    (if (= (remainder x y) 0)
+        (divide-until (/ x y) y)
+        x))
+
+(define (ncar x) (/ (log (divide-until x 3)) (log 2)))
+
+(define (ncdr x) (/ (log (divide-until x 2)) (log 3)))
+
+(writeln (ncar (ncons 7 9)))
+(writeln (ncdr (ncons 7 9)))
+
+(display '--------2.6)
+(newline)
+
+(define zero (lambda (f) (lambda (x) x)))
+
+(define one (lambda (f) (lambda (x) (f x))))
+
+(define two (lambda (f) (lambda (x) (f (f x)))))
+
+(define (plus a b)
+    (lambda (f) (lambda (x) ((b f) ((a f) x)))))
+
+(display '--------2.7)
+(newline)
+
+(define (make-interval a b) (cons a b))
+
+(define (upper-bound x) (max (car x) (cdr x)))
+
+(define (lower-bound x) (min (car x) (cdr x)))
+
+(display '--------2.8)
+(newline)
+
+(define (sub-interval x y)
+            (make-interval (abs (- (lower-bound x) (lower-bound y)))
+                           (abs (- (upper-bound x) (upper-bound y)))))
+
+(display '--------2.10)
+(newline)
+
+(define (div-interval x y) (mul-interval
+    x
+    (make-interval (/ 1.0 (if (= 0 (upper-bound y))
+                              (error "upper bound is zero")
+                              (upper-bound y)))
+                   (/ 1.0 (if (= 0 (lower-bound y))
+                              (error "lower bound is zero")
+                              (lower-bound y))))))
+
+(display '--------2.12)
+(newline)
+
+(define (make-center-percent c p)
+    (make-interval (- c (* c (/ p 100))) (+ c (* c (/ p 100)))))
+
+(define (center i)
+    (/ (+ (lower-bound i) (upper-bound i)) 2))
+
+(define (percent x)
+    (/ (- (upper-bound x) (center x)) (center x)))
+
 (exit)
