@@ -158,12 +158,12 @@
 (newline)
 
 (define (banlanced? x)
-    (if (null? x)
+    (if (or (null? x) (not (pair? x)))
         #t
         (and (= (* (branch-length (left-branch x)) (total-weight (branch-structure (left-branch x))))
                 (* (branch-length (right-branch x)) (total-weight (branch-structure (right-branch x)))))
              (banlanced? (branch-structure (left-branch x)))
-             (banlanced? (branch-structure (left-branch x))))))
+             (banlanced? (branch-structure (right-branch x))))))
 
 (define m2 (make-mobile 
              (make-branch 4 6) 
@@ -174,5 +174,93 @@
 
 (writeln (banlanced? m1))
 (writeln (banlanced? m2))
+
+(display '--------2.30)
+(newline)
+
+(define (square-tree tree)
+    (cond ((null? tree) tree)
+          ((not (pair? tree)) (square tree))
+          (else (cons (square-tree (car tree)) (square-tree (cdr tree))))))
+
+(writeln (square-tree
+       (list 1 (list 2 (list 3 4) 5) (list 6 7))))
+
+(define (square-tree-map tree)
+    (map (lambda (sub-tree)
+            (if (pair? sub-tree)
+                (square-tree sub-tree)
+                (square sub-tree))) tree))
+
+(writeln (square-tree-map
+       (list 1 (list 2 (list 3 4) 5) (list 6 7))))
+
+(display '--------2.31)
+(newline)
+
+(define (tree-map proc tree)
+    (cond ((null? tree) tree)
+          ((not (pair? tree)) (proc tree))
+          (else (cons (tree-map proc (car tree)) (tree-map proc (cdr tree))))))
+
+(define (new-square-tree tree) (tree-map square tree))
+
+(writeln (new-square-tree
+       (list 1 (list 2 (list 3 4) 5) (list 6 7))))
+
+
+(display '--------2.32)
+(newline)
+
+(define (subsets s)
+    (if (null? s)
+        (list '())
+        (let ((rest (subsets (cdr s))))
+            (append rest (map (lambda (x) (cons (car s) x)) rest)))))
+
+(writeln (subsets (list 1 2 3)))
+
+(display '--------2.33)
+(newline)
+
+(define (accumulate op initial sequence)
+    (if (null? sequence)
+        initial
+        (op (car sequence)
+            (accumulate op initial (cdr sequence)))))
+
+(define (map p sequence) (accumulate (lambda (x y) (cons (p x) y)) '() sequence))
+(define (append seq1 seq2) (accumulate cons seq1 seq2))
+(define (length sequence) (accumulate + 0 sequence))
+
+(display '--------2.34)
+(newline)
+
+(define (horner-eval x coefficient-sequence)
+    (accumulate (lambda (this-coeff higher-terms) 
+                    (+ this-coeff (* x higher-terms))) 0 coefficient-sequence))
+
+(writeln (horner-eval 2 (list 1 3 0 5 0 1)))
+
+(display '--------2.35)
+(newline)
+
+(define (count-leaves t)
+    (accumulate + 0 (map (lambda (x) (if (pair? x)
+                                         (count-leaves x)
+                                         1)) t)))
+
+ (writeln (count-leaves (list 1 2 (list 3 4) (list 5 (list 6 7)))))
+
+(display '--------2.36)
+(newline)
+
+(define (accumulate-n op init seqs)
+    (if (null? (car seqs))
+        '()
+        (cons (accumulate op init (map car seqs))
+              (accumulate-n op init (map cdr seqs)))))
+
+(writeln (accumulate-n + 0 (list (list 1 2 3) (list 40 50 60) (list 700 800 900))))
 
 (exit)
