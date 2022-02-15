@@ -433,4 +433,36 @@
                                    (- (xcor-vet x) (xcor-vet y))))
 
 (define (scale-vect s x) (make-vector (* s (xcor-vet x)) (* s (ycor-vet x))))
+
+(display '--------2.48)
+(newline)
+
+(define (make-segment a b c d)
+    (cons (make-vector a b) (make-vector c d)))
+
+(define start-segment car)
+
+(define end-segment cdr)
+
+(display '--------2.50)
+(newline)
+
+ (define (flip-horiz painter) 
+   (transform-painter painter 
+                      (make-vect 1.0 0.0) 
+                      (make-vect 0.0 0.0) 
+                      (make-vect 1.0 1.0))) 
+  
+ (define (rotate180 painter) 
+   (transform-painter painter 
+                      (make-vect 1.0 1.0) 
+                      (make-vect 0.0 1.0) 
+                      (make-vect 1.0 0.0))) 
+  
+ (define (rotate270 painter) 
+   (transform-painter painter 
+                      (make-vect 0.0 1.0) 
+                      (make-vect 0.0 0.0) 
+                      (make-vect 1.0 1.0))) 
+
 (exit)
