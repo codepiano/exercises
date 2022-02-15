@@ -263,4 +263,174 @@
 
 (writeln (accumulate-n + 0 (list (list 1 2 3) (list 40 50 60) (list 700 800 900))))
 
+(display '--------2.37)
+(newline)
+
+(define (dot-product v w)
+      (accumulate + 0 (map * v w)))
+
+(define (matrix-*-vector m v) (map (lambda (x) (dot-product v x)) m))
+
+(define (transpose mat) (accumulate-n cons '() mat))
+
+(define (matrix-*-matrix m n)
+    (let ((cols (transpose n)))
+        (map (lambda (x) (matrx-*-vector cols x)) m)))
+
+(display '--------2.37)
+(newline)
+
+(define fold-right accumulate)
+
+(define (fold-left op initial sequence)
+    (define (iter result rest)
+        (if (null? rest) result
+            (iter (op result (car rest))
+                  (cdr rest))))
+    (iter initial sequence))
+
+(display '--------2.39)
+(newline)
+
+(define (reverse-fr sequence)
+    (fold-right (lambda (x y) (append (list x) y)) '() sequence))
+
+(writeln (reverse-fr (list 1 2 3 4)))
+
+(define (reverse-fl sequence)
+    (fold-left (lambda (x y) (cons y x)) '() sequence))
+
+(writeln (reverse-fl (list 1 2 3 4)))
+
+(display '--------2.40)
+(newline)
+
+(define (enumerate-interval low high)
+    (if (> low high)
+        '()
+        (cons low (enumerate-interval (+ low 1) high))))
+
+(define (flatmap proc seq)
+    (accumulate append '() (map proc seq)))
+
+(define (unique-pairs n)
+    (flatmap (lambda (i)
+                    (map (lambda (j) (list i j)) 
+                        (enumerate-interval (+ i 1) n))) (enumerate-interval 1 n)))
+
+(writeln (unique-pairs 5))
+
+(define (make-pair-sum pair)
+    (list (car pair) (cadr pair) (+ (car pair) (cadr pair))))
+
+(define (prime-sum? pair)
+    (prime? (+ (car pair) (cadr pair))))
+
+(define (prime? n)
+    (= n (smallest-divisor n)))
+
+(define (smallest-divisor n) (find-divisor n 2))
+
+(define (divides? a b) (= (remainder b a) 0))
+
+(define (find-divisor n test-divisor) 
+    (cond ((> (square test-divisor) n) n)
+           ((divides? test-divisor n) test-divisor)
+           (else (find-divisor n (+ test-divisor 1)))))
+
+(define (prime-sum-pairs n)
+    (map make-pair-sum
+        (filter prime-sum? (unique-pairs n))))
+
+(writeln (prime-sum-pairs 6))
+
+(display '--------2.41)
+(newline)
+
+(define (triple-pairs n)
+    (flatmap (lambda (i)
+        (flatmap (lambda (j)
+                    (map (lambda (k) (list i j k)) 
+                        (enumerate-interval (+ j 1) n)))
+                 (enumerate-interval (+ i 1) n))
+        ) (enumerate-interval 1 n)))
+
+(writeln (triple-pairs 6))
+
+(define (triples-sum s n) (filter (lambda (x) (= s (accumulate + 0 x))) (triple-pairs n)))
+
+(writeln (triples-sum 10 6))
+
+(display '--------2.42)
+(newline)
+
+(define empty-board '())
+
+(define (adjoint-position r c rest) (cons (list r c) rest))
+
+(define (safe? k positions)
+    (if (< k 2)
+        #t
+        (let ((a (caar positions))
+              (b (cadar positions)))
+            (accumulate (lambda (position result)
+                            (let ((c (car position))
+                                  (d (cadr position)))
+                                (and result
+                                     (not (= (abs (- c a)) (abs (- d b))))
+                                     (not (= a c))
+                                     (not (= c d)))))
+                        #t
+                        (cdr positions)))))
+
+(define (queens board-size)
+    (define (queen-cols k)
+        (if (= k 0)
+            (list empty-board)
+            (filter
+                (lambda (positions) (safe? k positions))
+                (flatmap
+                    (lambda (rest-of-queens)
+                        (map (lambda (new-row)
+                                (adjoin-position
+                                new-row k rest-of-queens))
+                            (enumerate-interval 1 board-size)))
+                    (queen-cols (- k 1))))))
+    (queen-cols board-size))
+
+(display '--------2.44)
+(newline)
+
+(define (up-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (up-split painter (- n 1))))
+            (below painter (beside smaller smaller)))))
+
+(display '--------2.45)
+(newline)
+
+(define (split op1 op2)
+    (lambda (n) 
+        (if (= n 0)
+            painter
+            (let ((smaller (up-split painter (- n 1))))
+                (op1 painter (op2 smaller smaller))))))
+
+(display '--------2.46)
+(newline)
+
+(define (make-vector x y) (cons x y))
+
+(define xcor-vet car)
+
+(define ycor-vet cdr)
+
+(define (add-vec x y) (make-vector (+ (xcor-vet x) (xcor-vet y))
+                                   (+ (xcor-vet x) (xcor-vet y))))
+
+(define (sub-vec x y) (make-vector (- (xcor-vet x) (xcor-vet y))
+                                   (- (xcor-vet x) (xcor-vet y))))
+
+(define (scale-vect s x) (make-vector (* s (xcor-vet x)) (* s (ycor-vet x))))
 (exit)
