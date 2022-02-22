@@ -17,6 +17,7 @@
           ((quoted? exp) (text-of-quotation exp))
           ((assignment? exp) (eval-assignment exp env))
           ((definition? exp) (eval-definition exp env))
+          ((let? expr) (eval-))
           ((if? exp) (eval-if exp env))
           ((lambda? exp) (make-procedure (lambda-parameters exp)
                                       (lambda-body exp) env))
@@ -378,5 +379,12 @@
 
 (display '--------4.6)
 (newline)
+
+ (define (let? expr) (tagged-list? expr 'let)) 
+ (define (let-vars expr) (map car (cadr expr))) 
+ (define (let-vals expr) (map cadr (cadr expr))) 
+ (define (let-body expr) (cddr expr)) 
+ (define (let->combination expr) 
+   (list (make-lambda (let-vars expr) (let-body expr)) (let-vals expr))) 
 
 (exit)
